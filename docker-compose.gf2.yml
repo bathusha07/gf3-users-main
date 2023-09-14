@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  web:
+    networks:
+      - makegoodfood2
+    ports:
+      - "8080:8080"
+  mysql:
+    ports:
+      - "33062:3306"
+    networks:
+      - makegoodfood2
+  pubsub:
+    networks:
+      - makegoodfood2
+  pubsub-listeners:
+    networks:
+      - makegoodfood2
+
+networks:
+  makegoodfood2:
+    name: makegoodfood2
+    driver: bridge

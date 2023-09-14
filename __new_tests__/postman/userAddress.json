@@ -1,0 +1,455 @@
+{
+	"info": {
+		"_postman_id": "8752f96a-5d0e-4f8e-998a-9fcf5a5047e2",
+		"name": "3.0 User service: Address",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('properties of a user are present', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.id).to.be.string;",
+							"    pm.expect(json.email).to.be.string;",
+							"    pm.expect(json.firebase_id).to.be.string;",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_USER_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let random_string = require('uuid').v4().replace(/-/g, '').substring(12);",
+							"pm.collectionVariables.set('FIREBASE_ID', random_string);",
+							"pm.collectionVariables.set('EMAIL', `${random_string}@test.com`);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firebase_id\": \"{{FIREBASE_ID}}\",\n    \"email\": \"{{EMAIL}}\",\n    \"phone\": \"5145550001\",\n    \"first_name\": \"Johnny\",\n    \"last_name\": \"Bravo\",\n    \"fsa\": \"H2T\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt create address without required fields",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400', () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"pm.test('Response error string specifies all required fields', () => {",
+							"    let error = pm.response.json().error;",
+							"    pm.expect(error).to.include('user_id is a required field');",
+							"    pm.expect(error).to.include('is_default is a required field');",
+							"    pm.expect(error).to.include('address_line_1 is a required field');",
+							"    pm.expect(error).to.include('city is a required field');",
+							"    pm.expect(error).to.include('province_code is a required field');",
+							"    pm.expect(error).to.include('country_code is a required field');",
+							"    pm.expect(error).to.include('postal_code is a required field');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/address/",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"address",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt to create address with invalid values",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400', () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"pm.test('Response error string specifies all required fields', () => {",
+							"    let error = pm.response.json().error;",
+							"    pm.expect(error).to.include('user_id must be');",
+							"    pm.expect(error).to.include('is_default must be');",
+							"    pm.expect(error).to.include('province_code must be');",
+							"    pm.expect(error).to.include('country_code must be');",
+							"    pm.expect(error).to.include('postal_code must match');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": \"invalid\",\n    \"is_default\": \"string\",\n    \"address_line_1\": \"737 Mad Max Fury Road\",\n    \"city\": \"Valhalla\",\n    \"province_code\": \"ABCD\",\n    \"country_code\": \"Canada\",\n    \"postal_code\": \"what kind of postal code is this?\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/address/",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"address",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create address",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('properties of an address are present', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.id).to.be.string;",
+							"    pm.expect(json.user_id).to.be.string;",
+							"    pm.expect(json.address_line_1).to.be.string;",
+							"    pm.expect(json.postal_code).to.be.string;",
+							"});",
+							"",
+							"pm.collectionVariables.set('FIRST_ADDRESS_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": \"{{CREATED_USER_ID}}\",\n    \"is_default\": true,\n    \"address_line_1\": \"1234 Somewhere Road\",\n    \"city\": \"Townsville\",\n    \"province_code\": \"AB\",\n    \"country_code\": \"CA\",\n    \"postal_code\": \"H2T 2M2\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/address/",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"address",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create new default address",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('SECOND_DEFAULT_ADDRESS_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": \"{{CREATED_USER_ID}}\",\n    \"is_default\": true,\n    \"address_line_1\": \"4321 Bus Drive\",\n    \"city\": \"Chatown\",\n    \"province_code\": \"ON\",\n    \"country_code\": \"CA\",\n    \"postal_code\": \"H5R 3E4\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/address/",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"address",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify old address is no longer default",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let json = pm.response.json();",
+							"",
+							"pm.test('Old default address is not default anymore', () => {",
+							"    let firstAddress = json.filter((address) => {",
+							"        return address.id == pm.collectionVariables.get(\"FIRST_ADDRESS_ID\");",
+							"    })[0];",
+							"    pm.expect(firstAddress.is_default).to.eql(false);",
+							"});",
+							"",
+							"pm.test('New address is new default', () => {",
+							"    let newDefaultAddress = json.filter((address) => {",
+							"        return address.id == pm.collectionVariables.get(\"SECOND_DEFAULT_ADDRESS_ID\");",
+							"    })[0];",
+							"    pm.expect(newDefaultAddress.is_default).to.eql(true);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": \"{{CREATED_USER_ID}}\",\n    \"is_default\": true,\n    \"address_line_1\": \"4321 Bus Drive\",\n    \"city\": \"Chatown\",\n    \"province_code\": \"ON\",\n    \"country_code\": \"CA\",\n    \"postal_code\": \"H5R 3E4\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/address",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"address"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create new non-default address",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": \"{{CREATED_USER_ID}}\",\n    \"is_default\": false,\n    \"address_line_1\": \"713A Avenue Clark\",\n    \"city\": \"Hole\",\n    \"province_code\": \"BC\",\n    \"country_code\": \"CA\",\n    \"postal_code\": \"H9X 1T5\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/address/",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"address",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify previous default address is still the only default",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let json = pm.response.json();",
+							"",
+							"pm.test('Last submitted default address is still default', () => {",
+							"    let newDefaultAddress = json.filter((address) => {",
+							"        return address.id == pm.collectionVariables.get(\"SECOND_DEFAULT_ADDRESS_ID\");",
+							"    })[0];",
+							"    pm.expect(newDefaultAddress.is_default).to.eql(true);",
+							"});",
+							"",
+							"pm.test('The user has only 1 default address out of 3 created', () => {",
+							"    let nonDefaultAddresses = json.filter((address) => {",
+							"        return address.id != pm.collectionVariables.get(\"SECOND_DEFAULT_ADDRESS_ID\");",
+							"    });",
+							"    pm.expect(nonDefaultAddresses.length).to.eql(2);",
+							"    for (const address of nonDefaultAddresses) {",
+							"        pm.expect(address.is_default).to.eql(false);",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": \"{{CREATED_USER_ID}}\",\n    \"is_default\": true,\n    \"address_line_1\": \"4321 Bus Drive\",\n    \"city\": \"Chatown\",\n    \"province_code\": \"ON\",\n    \"country_code\": \"CA\",\n    \"postal_code\": \"H5R 3E4\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/address",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"address"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "FIREBASE_ID",
+			"value": ""
+		},
+		{
+			"key": "EMAIL",
+			"value": ""
+		},
+		{
+			"key": "CREATED_USER_ID",
+			"value": ""
+		},
+		{
+			"key": "FIRST_ADDRESS_ID",
+			"value": ""
+		},
+		{
+			"key": "SECOND_DEFAULT_ADDRESS_ID",
+			"value": ""
+		},
+		{
+			"key": "NON_DEFUALT_ADDRESS_ID",
+			"value": ""
+		}
+	]
+}

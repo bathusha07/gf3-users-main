@@ -1,0 +1,4070 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "description": "Goodfood 3.0 Users Microservice",
+    "version": "1.0.0",
+    "title": "Goodfood 3.0 Users Service API"
+  },
+  "tags": [
+    {
+      "name": "user",
+      "description": "User operations"
+    },
+    {
+      "name": "address",
+      "description": "Address operations"
+    },
+    {
+      "name": "admin",
+      "description": "Admin operations"
+    },
+    {
+      "name": "migration",
+      "description": "GF2 to GF3 migration operations"
+    }
+  ],
+  "paths": {
+    "/migration/user": {
+      "post": {
+        "tags": ["migration"],
+        "summary": "Create a user from GF2 data",
+        "operationId": "migrationCreateUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user": {
+                    "$ref": "#/components/schemas/User"
+                  },
+                  "address": {
+                    "$ref": "#/components/schemas/MigrationAddressRequestBody"
+                  },
+                  "card": {
+                    "type": "object",
+                    "properties": {
+                      "stripe_card_id": {
+                        "type": "string",
+                        "example": "card_123xyz"
+                      },
+                      "stripe_customer_id": {
+                        "type": "string",
+                        "example": "cus_123xyz"
+                      }
+                    },
+                    "required": ["stripe_card_id", "stripe_customer_id"]
+                  },
+                  "mealkit_subscription": {
+                    "type": "object",
+                    "properties": {
+                      "ip_address": {
+                        "type": "string",
+                        "format": "ip",
+                        "example": "123.123.123.123"
+                      },
+                      "started_at": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "plan_id": {
+                        "$ref": "#/components/schemas/BaseSubscriptionInput/properties/product_id"
+                      },
+                      "delivery_day": {
+                        "$ref": "#/components/schemas/BaseSubscriptionInput/properties/delivery_day"
+                      },
+                      "is_afterhours": {
+                        "type": "boolean"
+                      },
+                      "coupon_code": {
+                        "type": "string",
+                        "example": "MEALKIT45"
+                      }
+                    },
+                    "required": ["ip_address", "started_at", "plan_id", "delivery_day"]
+                  },
+                  "wow_subscription": {
+                    "type": "object",
+                    "properties": {
+                      "ip_address": {
+                        "type": "string",
+                        "format": "ip",
+                        "example": "123.123.123.123"
+                      },
+                      "state": {
+                        "type": "string",
+                        "enum": ["ACTIVE", "TRIAL"]
+                      },
+                      "started_at": {
+                        "type": "string",
+                        "format": "date"
+                      }
+                    },
+                    "required": ["ip_address", "state", "started_at"]
+                  }
+                },
+                "required": ["user", "address", "card"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid form submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/address": {
+      "post": {
+        "summary": "Create new address for user as agent",
+        "tags": ["address", "admin"],
+        "operationId": "AdminCreateAddress",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AddressRequestBody"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AdminRequestBody"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Address created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Address"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid form submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/subscription/{id}/cancellation": {
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "ID of the subscription"
+        }
+      ],
+      "post": {
+        "summary": "Cancel a subscription as an agent",
+        "tags": ["subscription", "admin"],
+        "operationId": "AdminSubscriptionCancellation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "agent_id": {
+                    "$ref": "#/components/schemas/AdminRequestBody/properties/agent_id"
+                  },
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/CancellationSelectionValue"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "description": "An array of selections over cancellation_reason"
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/CancellationSelectionEntity"
+                      },
+                      {
+                        "$ref": "#/components/schemas/CancellationSelectionValue"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example-1": {
+                    "value": {
+                      "error": "Subscription not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error contacting external service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Sets the subscription into cancellation state with an array of reason selections in the body."
+      }
+    },
+    "/admin/subscription/{id}/pause": {
+      "put": {
+        "tags": ["admin", "subscription"],
+        "summary": "Pause a subscription",
+        "operationId": "adminPauseSubscription",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The subscription ID to be paused",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Subscription paused"
+          },
+          "404": {
+            "description": "Subscription not found"
+          },
+          "422": {
+            "description": "Valid request submitted, but request could not be processed"
+          },
+          "500": {
+            "description": "External service error"
+          }
+        }
+      }
+    },
+    "/admin/subscription/{id}/activate": {
+      "put": {
+        "tags": ["admin", "subscription"],
+        "summary": "Activate a subscription",
+        "operationId": "adminActivateSubscription",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The subscription ID to be activated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Subscription activated"
+          },
+          "404": {
+            "description": "Subscription not found"
+          },
+          "422": {
+            "description": "Valid request submitted, but request could not be processed"
+          },
+          "500": {
+            "description": "External service error"
+          }
+        }
+      }
+    },
+    "/admin/subscription/{id}/plan": {
+      "patch": {
+        "tags": ["admin", "subscription"],
+        "summary": "Update a SCHEDULED subscription's plan",
+        "operationId": "adminUpdateSubscriptionPlan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The subscription ID to be updated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UpdateSubscriptionPlanRequestBody"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AdminRequestBody"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription plan updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid request submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error contacting external service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/subscription/{id}/weekday": {
+      "patch": {
+        "tags": ["admin", "subscription"],
+        "summary": "Update a SCHEDULED subscription's delivery day",
+        "operationId": "adminUpdateSubscriptionDeliveryDay",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The subscription ID to be updated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminRequestBody"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "delivery_day": {
+                        "$ref": "#/components/schemas/BaseSubscriptionInput/properties/delivery_day"
+                      },
+                      "is_afterhours": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["delivery_day"]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription weekday updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid request submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error contacting external service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/user/{id}": {
+      "patch": {
+        "tags": ["user", "admin"],
+        "summary": "Update user record",
+        "operationId": "adminUpdateUser",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The ID of the user to be updated",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UpdateUserRequestBody"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AdminRequestBody"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing"
+          },
+          "422": {
+            "description": "Valid form submitted, but request could not be processed"
+          },
+          "500": {
+            "description": "External service error"
+          }
+        }
+      }
+    },
+    "/admin/user/{user_id}/cancel": {
+      "post": {
+        "description": "Cancels all of a user's subscriptions and deactivates their account.",
+        "tags": ["admin", "user"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/User/properties/id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "agent_id": {
+                    "$ref": "#/components/schemas/AdminRequestBody/properties/agent_id"
+                  },
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/CancellationSelectionValue"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "description": "An array of selections over cancellation_reason"
+        },
+        "responses": {
+          "204": {
+            "description": "User cancelled"
+          },
+          "400": {
+            "description": "Invalid form input"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "422": {
+            "description": "The form was valid but could not satisfy business rules"
+          },
+          "500": {
+            "description": "External service error"
+          }
+        }
+      }
+    },
+    "/admin/user/{user_id}/subscription/uncancel": {
+      "post": {
+        "description": "Creates a subscription from the user's most recently cancelled subscription of matching type",
+        "tags": ["admin", "subscription", "user"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/User/properties/id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminRequestBody"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "old_plan_id": {
+                        "$ref": "#/components/schemas/BaseSubscriptionInput/properties/old_plan_id"
+                      },
+                      "subscription_type": {
+                        "$ref": "#/components/schemas/Subscription/properties/subscription_type"
+                      }
+                    },
+                    "required": ["old_plan_id", "subscription_type"]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Subscription created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UncancelSubscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "422": {
+            "description": "The form was valid but could not satisfy business rules"
+          },
+          "500": {
+            "description": "External service error"
+          }
+        }
+      }
+    },
+    "/admin/user/{user_id}/user-cancellation-selection": {
+      "get": {
+        "description": "Get the user's cancellation selection history",
+        "tags": ["admin", "subscription", "user"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/User/properties/id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cancellation Selections Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type":"array",
+                    "items":{
+                      "$ref": "#/components/schemas/CancellationSelections"
+                    }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "422": {
+            "description": "The form was valid but could not satisfy business rules"
+          },
+          "500": {
+            "description": "External service error"
+          }
+        }
+      }
+    },
+    "/user/{user_id}/accountReactivation": {
+      "put": {
+        "description": "Reactived user's account in both GF2.0/3.0",
+        "tags": ["user"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/User/properties/id"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Note: Currently, only SCHEDULED subsciption type is supported.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "old_plan_id": {
+                        "$ref": "#/components/schemas/BaseSubscriptionInput/properties/old_plan_id"
+                      },
+                      "subscription_type": {
+                        "$ref": "#/components/schemas/Subscription/properties/subscription_type"
+                      }
+                    },
+                    "required": ["old_plan_id", "subscription_type"]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Subscription created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "422": {
+            "description": "The form was valid but could not satisfy business rules"
+          },
+          "500": {
+            "description": "External service error"
+          }
+        }
+      }
+    },
+    "/user/{user_id}/anonymize": {
+      "put": {
+        "description": "Anonymize user account",
+        "tags": ["user"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/User/properties/id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "email_hash": {
+                        "type": "string"
+                      },
+                      "phone_hash": {
+                        "type": "string"
+                      },
+                      "first_name_hash": {
+                        "type": "string"
+                      },
+                      "last_name_hash": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["email_hash", "phone_hash", "first_name_hash", "last_name_hash"]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "User Anonymized"
+          },
+          "400": {
+            "description": "Invalid form input"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "422": {
+            "description": "The form was valid but could not satisfy business rules"
+          },
+          "500": {
+            "description": "External service error"
+          }
+        }
+      }
+    },
+    "/address": {
+      "post": {
+        "tags": ["address"],
+        "summary": "Create address record",
+        "operationId": "createAddress",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddressRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Address created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Address"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid form submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/address/{id}": {
+      "patch": {
+        "tags": ["address"],
+        "summary": "Update address record",
+        "operationId": "updateAddress",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The address ID to be updated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddressRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Address updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Address"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid form submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/{user_id}/cancel": {
+      "post": {
+        "description": "Cancels all of a user's subscriptions and deactivates their account.",
+        "tags": ["user"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/User/properties/id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/CancellationSelectionValue"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "description": "An array of selections over cancellation_reason"
+        },
+        "responses": {
+          "204": {
+            "description": "User cancelled"
+          },
+          "400": {
+            "description": "Invalid form input"
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "422": {
+            "description": "The form was valid but could not satisfy business rules"
+          },
+          "500": {
+            "description": "External service error"
+          }
+        }
+      }
+    },
+    "/user/{id}/address": {
+      "get": {
+        "tags": ["address"],
+        "summary": "Get a user's address(es)",
+        "operationId": "getUserAddress",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The ID of the user who's addresses we're looking for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User address found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Address"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Referenced resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user": {
+      "post": {
+        "tags": ["user"],
+        "summary": "Create user",
+        "operationId": "createUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid form submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/{id}": {
+      "patch": {
+        "tags": ["user"],
+        "summary": "Update user record",
+        "operationId": "updateUser",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The ID of the user to be updated",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid form submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["user"],
+        "summary": "Get user by ID",
+        "description": "",
+        "operationId": "getUserById",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The ID of the user to be fetched",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserComposite"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/card": {
+      "post": {
+        "tags": ["card"],
+        "summary": "Create card",
+        "operationId": "createCard",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/CreateCardFromTokenInput"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreateCardFromIntentInput"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Card created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Card"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid form submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/card/{card_id}": {
+      "get": {
+        "tags": ["card"],
+        "summary": "Get card",
+        "operationId": "getCard",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "card_id",
+            "description": "The ID of the card we're looking for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuidv4",
+              "example": "9f1c8c6f-3952-4fbc-abdf-86cf6f02a753"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Card found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Card"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Card does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["card"],
+        "summary": "Update card",
+        "operationId": "updateCard",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "card_id",
+            "description": "The ID of the card we're updating",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuidv4",
+              "example": "9f1c8c6f-3952-4fbc-abdf-86cf6f02a753"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCardInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Card updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Card"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Card not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid form submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/{user_id}/card": {
+      "get": {
+        "tags": ["card"],
+        "summary": "Get a user's cards",
+        "operationId": "getUserCards",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "description": "The ID of the user who's cards we're looking for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuidv4",
+              "example": "9f1c8c6f-3952-4fbc-abdf-86cf6f02a753"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User cards found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Card"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/{user_id}/card/sync": {
+      "patch": {
+        "tags": ["card"],
+        "summary": "Sync a user's cards with Stripe",
+        "operationId": "syncUserCards",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "description": "The ID of the user who's cards we're looking for",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuidv4",
+              "example": "9f1c8c6f-3952-4fbc-abdf-86cf6f02a753"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User cards found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Card"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid form submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error contacting external service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/card/stripe_card_id/{stripe_card_id}": {
+      "delete": {
+        "tags": ["card"],
+        "summary": "Delete an already deleted card by stripe id",
+        "operationId": "deleteAlreadyDeletedCardWithStripeCardId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stripe_card_id",
+            "description": "The stripe id of the already-deleted card to delete from the user db",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "card_123xyz"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Card deleted"
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/card/stripe_card": {
+      "post": {
+        "tags": ["card"],
+        "summary": "Create an already created card (on Stripe)",
+        "operationId": "createAlreadyCreatedCardWithStripeCardId",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "stripe_customer_id": {
+                    "type": "string",
+                    "example": "cus_123xyz"
+                  },
+                  "stripe_card_id": {
+                    "type": "string",
+                    "example": "card_123xyz"
+                  }
+                },
+                "required": ["stripe_customer_id", "stripe_card_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Card created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Card"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid form submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/setup_intent": {
+      "post": {
+        "tags": ["setup_intent"],
+        "summary": "Create setup intent",
+        "operationId": "createSetupIntent",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "requester_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": ["user_id", "requester_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "SetupIntent created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupIntent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Firebase user not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/membership": {
+      "get": {
+        "tags": ["membership"],
+        "summary": "Get all memberships",
+        "description": "",
+        "operationId": "getMemberships",
+        "responses": {
+          "200": {
+            "description": "Memberships found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Membership"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/membership/{id}": {
+      "get": {
+        "tags": ["membership"],
+        "summary": "Get membership by ID",
+        "description": "",
+        "operationId": "getMembershipById",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The ID of the membership to be fetched",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Membership"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Membership not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/membership/{id}/prices": {
+      "get": {
+        "tags": ["membership"],
+        "summary": "Get a membership's prices",
+        "operationId": "getMembershipPrices",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The ID of the membership whose prices we're looking for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Membership prices found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MembershipPrice"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Membership not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plan": {
+      "get": {
+        "tags": ["plan"],
+        "summary": "Get all plans",
+        "description": "",
+        "operationId": "getPlans",
+        "responses": {
+          "200": {
+            "description": "Plans found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Plan"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plan_frequency": {
+      "get": {
+        "tags": ["plan_frequency"],
+        "summary": "Get all plan frequencies",
+        "description": "",
+        "operationId": "getPlanFrequencies",
+        "responses": {
+          "200": {
+            "description": "PlanFrequencies found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlanFrequency"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agreement": {
+      "post": {
+        "tags": ["agreement"],
+        "summary": "Create agreement",
+        "operationId": "createAgreement",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "terms_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ip_address": {
+                    "type": "string",
+                    "format": "ipv4"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Agreement created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Agreement"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscription": {
+      "post": {
+        "tags": ["subscription"],
+        "summary": "Create subscription",
+        "operationId": "createSubscription",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Subscription created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Referenced resource does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error contacting external service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/{id}/subscription": {
+      "get": {
+        "tags": ["subscription"],
+        "summary": "Get a user's subscriptions",
+        "operationId": "getUserSubscriptions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The ID of the user who's subscriptions we're looking for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User subscriptions found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Subscription"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/{id}/subscription/last-cancelled": {
+      "get": {
+        "tags": ["subscription"],
+        "summary": "Get the user's last cancelled subscription",
+        "operationId": "getLastCancelledSubscription",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "User id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "description": "Optional filter for type of subscription cancelled. Pass \"SCHEDULED\" for Mealkit subsciptions and \"MEMBERSHIP\" for WOW subscriptions. Passing nothing finds the last cancelled subscription from all types of subscriptions.",
+            "schema": {
+              "$ref": "#/components/schemas/BaseSubscriptionInput/properties/subscription_type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The user's last cancelled subscription. Returns null if user has not cancelled a subscription before.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/LastCancelledSubscription"
+                    },
+                    {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid subscription type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscription/{id}": {
+      "get": {
+        "tags": ["subscription"],
+        "summary": "Get subscription by ID",
+        "description": "",
+        "operationId": "getSubscriptionById",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The ID of the subscription to be fetched",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscription/{id}/pause": {
+      "put": {
+        "tags": ["subscription"],
+        "summary": "Pause a subscription",
+        "operationId": "pauseSubscription",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The subscription ID to be paused",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Subscription paused"
+          },
+          "404": {
+            "description": "Subscription not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid request submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscription/{id}/activate": {
+      "put": {
+        "tags": ["subscription"],
+        "summary": "Activate a subscription",
+        "operationId": "activateSubscription",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The subscription ID to be activated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Subscription activated"
+          },
+          "404": {
+            "description": "Subscription not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid request submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscription/{id}/weekday": {
+      "patch": {
+        "tags": ["subscription"],
+        "summary": "Update a SCHEDULED subscription's delivery day",
+        "operationId": "updateSubscriptionDeliveryDay",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The subscription ID to be updated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "delivery_day": {
+                    "$ref": "#/components/schemas/BaseSubscriptionInput/properties/delivery_day"
+                  }
+                },
+                "required": ["delivery_day"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription weekday updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid request submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error contacting external service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscription/{id}/schedule": {
+      "patch": {
+        "tags": ["subscription"],
+        "summary": "Update a SCHEDULED subscription's delivery schedule",
+        "operationId": "updateSubscriptionSchedule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The subscription ID to be updated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "delivery_day": {
+                    "$ref": "#/components/schemas/BaseSubscriptionInput/properties/delivery_day"
+                  },
+                  "plan_frequency_id": {
+                    "$ref": "#/components/schemas/BaseSubscriptionInput/properties/plan_frequency_id"
+                  },
+                  "initial_cycle_date": {
+                    "$ref": "#/components/schemas/BaseSubscriptionInput/properties/initial_cycle_date"
+                  }
+                },
+                "required": ["delivery_day", "plan_frequency_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription schedule updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid request submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error contacting external service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscription/{id}/trial": {
+      "patch": {
+        "tags": ["subscription"],
+        "summary": "Update a subscription's trial expiry",
+        "operationId": "updateSubscriptionTrial",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The subscription ID to be updated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "trial_end": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                },
+                "required": ["trial_end"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription trial updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid request submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error contacting external service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscription/{id}/plan": {
+      "patch": {
+        "tags": ["subscription"],
+        "summary": "Update a SCHEDULED subscription's plan",
+        "operationId": "updateSubscriptionPlan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The subscription ID to be updated",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "plan_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "old_plan_id": {
+                    "type": "number",
+                    "description": "GF2 legacy plan ID"
+                  }
+                },
+                "required": ["plan_id", "old_plan_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription plan updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid request submitted, but request could not be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error contacting external service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscription/cancellation_reason": {
+      "get": {
+        "summary": "Cancellation reasons",
+        "tags": ["subscription"],
+        "operationId": "getCancellationReasons",
+        "description": "Returns a list of all possible cancellation reasons",
+        "parameters": [
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "is_user_visible",
+            "description": "If true, only shows user visible reasons. If false, only shows non user-visible reasons."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/CancellationReasonValue"
+                      },
+                      {
+                        "$ref": "#/components/schemas/CancellationReasonEntity"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a reason for cancellation",
+        "operationId": "createCancellationReason",
+        "tags": ["subscription"],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/CancellationReasonValue"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CancellationReasonEntity"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancellationReasonValue"
+              }
+            }
+          },
+          "description": ""
+        },
+        "description": "Create a reason for cancellation"
+      },
+      "parameters": []
+    },
+    "/subscription/cancellation_reason/{id}": {
+      "parameters": [
+        {
+          "schema": {
+            "type": "number"
+          },
+          "name": "id",
+          "in": "path",
+          "description": "ID of the reason",
+          "required": true
+        }
+      ],
+      "put": {
+        "summary": "Update a reason for cancellation",
+        "tags": ["subscription"],
+        "operationId": "updateCancellationReason",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/CancellationReasonEntity"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CancellationReasonValue"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "description": "Update a reason for cancellation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancellationReasonValue"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["subscription"],
+        "summary": "Delete a reason for cancellation",
+        "operationId": "deleteCancellationReason",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "description": "Deletes a reason for cancellation"
+      }
+    },
+    "/subscription/{id}/cancellation": {
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "ID of the subscription"
+        }
+      ],
+      "get": {
+        "summary": "Get a list of reasons why this subscription was cancelled",
+        "tags": ["subscription"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/CancellationSelectionEntity"
+                      },
+                      {
+                        "$ref": "#/components/schemas/CancellationSelectionValue"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getCancellationSelections",
+        "description": "Returns the reasons for this subscription's cancellation"
+      },
+      "post": {
+        "summary": "",
+        "tags": ["subscription"],
+        "operationId": "PostSubscriptionCancellation",
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/CancellationSelectionEntity"
+                      },
+                      {
+                        "$ref": "#/components/schemas/CancellationSelectionValue"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "example-1": {
+                    "value": {
+                      "error": "Subscription not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error contacting external service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CancellationSelectionValue"
+                }
+              }
+            }
+          },
+          "description": "An array of selections over cancellation_reason"
+        },
+        "description": "Sets the subscription into cancellation state with an array of reason selections in the body."
+      }
+    },
+    "/subscription/{id}/membership": {
+      "get": {
+        "tags": ["subscription"],
+        "summary": "Get subscription membership",
+        "description": "",
+        "operationId": "getSubscriptionMembership",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "The ID of the subscription to fetch membership for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Membership"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "price": {
+                          "$ref": "#/components/schemas/MembershipPrice"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Wrong subscription type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/{user_id}/preferences": {
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "user_id",
+          "in": "path",
+          "required": true,
+          "description": "ID of the user"
+        },
+        {
+          "$ref": "#/components/parameters/subscription_id"
+        }
+      ],
+      "get": {
+        "summary": "Get the preferences",
+        "tags": ["preferences"],
+        "operationId": "getPreferences",
+        "description": "Gets preferences for a user by default, and for a subscription if the subscription_id is passed",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/PreferenceEntity"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create preferences",
+        "tags": ["preferences"],
+        "operationId": "createPreferences",
+        "description": "Creates preferences for a user by default, and for a subscription if the subscription_id is passed",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "description": "An array of the desired preferences"
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/PreferenceEntity"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update preferences",
+        "tags": ["preferences"],
+        "operationId": "updatePreferences",
+        "description": "Updates preferences for a user by default, and for a subscription if the subscription_id is passed",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "description": "An array of the desired preferences"
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/PreferenceEntity"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid form input or required fields missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "subscription_id": {
+        "in": "query",
+        "name": "subscription_id",
+        "description": "The subscription ID",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/Subscription/properties/id"
+        }
+      }
+    },
+    "schemas": {
+      "MigrationAddressRequestBody": {
+        "type": "object",
+        "properties": {
+          "address_line_1": {
+            "type": "string"
+          },
+          "address_line_2": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string"
+          },
+          "province_code": {
+            "type": "string"
+          },
+          "country_code": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "building_type": {
+            "type": "string"
+          },
+          "special_instructions": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["address_line_1", "city", "province_code", "country_code", "postal_code"]
+      },
+      "AddressRequestBody": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "user_id": {
+                "type": "string"
+              },
+              "is_default": {
+                "type": "boolean"
+              }
+            },
+            "required": ["user_id", "is_default"]
+          },
+          {
+            "$ref": "#/components/schemas/MigrationAddressRequestBody"
+          }
+        ]
+      },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "address_line_1": {
+            "type": "string"
+          },
+          "address_line_2": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "province_code": {
+            "type": "string"
+          },
+          "country_code": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "building_type": {
+            "type": "string"
+          },
+          "special_instructions": {
+            "type": "string"
+          },
+          "is_default": {
+            "type": "boolean"
+          },
+          "fsa": {
+            "type": "string",
+            "example": "K1A"
+          }
+        },
+        "required": ["id"]
+      },
+      "AdminRequestBody": {
+        "type": "object",
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": ["agent_id"]
+      },
+      "UpdateUserRequestBody": {
+        "type": "object",
+        "properties": {
+          "firebase_id": {
+            "type": "string",
+            "example": "e1I4xYb9T0U35Od9nfNmaCjgRoS2"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "/^[0-9]{10}$/g"
+          },
+          "first_name": {
+            "type": "string",
+            "example": "First"
+          },
+          "last_name": {
+            "type": "string",
+            "example": "Last"
+          },
+          "language": {
+            "type": "string",
+            "example": "en",
+            "enum": ["en", "fr"]
+          }
+        }
+      },
+      "CreateUserRequestBody": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "fsa": {
+                "type": "string",
+                "pattern": "/^[A-Z][0-9][A-Z]$/g",
+                "example": "H3A"
+              },
+              "referrer_id": {
+                "description": "A GF2.0 GiveGet referrer id. 'g' - refers to an email invite. 'l' - refers to a link invite.",
+                "type": "string"
+              }
+            },
+            "required": ["fsa", "email", "firebase_id", "language"]
+          },
+          {
+            "$ref": "#/components/schemas/UpdateUserRequestBody"
+          }
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "firebase_id": {
+            "type": "string",
+            "example": "e1I4xYb9T0U35Od9nfNmaCjgRoS2",
+            "description": "firebase_id comes from the ID generated on Firebase Authentication when the user is registered there. It is a random string of 28 characters with a mix of upper- and lower-case characters and numbers. It must be unique."
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "/^[0-9]{10}$/g"
+          },
+          "first_name": {
+            "type": "string",
+            "example": "First"
+          },
+          "last_name": {
+            "type": "string",
+            "example": "McLasty"
+          },
+          "language": {
+            "type": "string",
+            "example": "en",
+            "enum": ["en", "fr"]
+          }
+        },
+        "required": ["id", "firebase_id", "email", "language"]
+      },
+      "UserComposite": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/User"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "default_postal_code": {
+                "type": "string",
+                "example": "H4T1K2"
+              },
+              "addresses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Address"
+                }
+              },
+              "address_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "deprecated": true,
+                "description": "This field is deprecated. Please use the data returned in the `addresses` array."
+              },
+              "subscriptions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              },
+              "membership_subscription_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "deprecated": true,
+                "description": "This field is deprecated. Please use the data returned in the `subscriptions` array."
+              },
+              "scheduled_subscription_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "deprecated": true,
+                "description": "This field is deprecated. Please use the data returned in the `subscriptions` array."
+              },
+              "carts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "integer",
+                      "example": "113"
+                    },
+                    "delivery_date": {
+                      "type": "string",
+                      "format": "date",
+                      "example": "2021-09-24T00:00:00.000Z"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": ["CURATED", "STANDARD"]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": ["ACTIVE", "CANCELLED", "INCOMPLETE"]
+                    },
+                    "item_count": {
+                      "type": "integer",
+                      "example": 3
+                    }
+                  }
+                }
+              },
+              "preference_tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "CreateCardFromTokenInput": {
+        "type": "object",
+        "properties": {
+          "create_method": {
+            "type": "string",
+            "enum": ["TOKEN"]
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stripe_card_token": {
+            "type": "string",
+            "example": "tok_1JPCJ1HvjO3p47C8w9ju4A2o"
+          }
+        },
+        "required": ["create_method", "user_id", "stripe_card_token"]
+      },
+      "CreateCardFromIntentInput": {
+        "type": "object",
+        "properties": {
+          "create_method": {
+            "type": "string",
+            "enum": ["INTENT"]
+          },
+          "stripe_customer_id": {
+            "type": "string",
+            "example": "cus_K25irbZTveAhs3"
+          },
+          "stripe_payment_method_id": {
+            "type": "string",
+            "example": "pm_1IUCL4HvjO3p47C82LHdGXF2"
+          }
+        },
+        "required": ["create_method", "stripe_customer_id", "stripe_payment_method_id"]
+      },
+      "UpdateCardInput": {
+        "type": "object",
+        "properties": {
+          "stripe_card_token": {
+            "type": "string",
+            "example": "tok_1JPCJ1HvjO3p47C8w9ju4A2o"
+          }
+        },
+        "required": ["stripe_card_token"]
+      },
+      "Card": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuidv4",
+            "example": "9f1c8c6f-3952-4fbc-abdf-86cf6f02a753"
+          },
+          "stripe_customer_id": {
+            "type": "string",
+            "example": "cus_K25irbZTveAhs3"
+          },
+          "stripe_payment_method_id": {
+            "type": "string",
+            "example": "pm_1IUCL4HvjO3p47C82LHdGXF2"
+          },
+          "stripe_card_id": {
+            "type": "string",
+            "example": "card_1JO1YmHvjO3p47C8Eua12NmK"
+          },
+          "stripe_card_token": {
+            "type": "string",
+            "example": "tok_1JPUrKHvjO3p47C80iX4GP2G"
+          },
+          "is_default": {
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "stripe_customer_id"]
+      },
+      "Membership": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "trial_type": {
+            "type": "string",
+            "enum": ["DAY", "MONTH", "YEAR"]
+          },
+          "trial_value": {
+            "type": "integer"
+          },
+          "frequency_type": {
+            "type": "string",
+            "enum": ["DAY", "MONTH", "YEAR"]
+          },
+          "frequency_value": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "trial_type",
+          "trial_value",
+          "frequency_type",
+          "frequency_value"
+        ]
+      },
+      "MembershipPrice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "membership_id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "province_code": {
+            "type": "string",
+            "enum": ["QC", "ON", "NL", "PE", "NS", "NB", "MB", "SK", "AB", "BC", "YT", "NT", "NU"]
+          },
+          "price": {
+            "type": "number"
+          },
+          "tax_code": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "membership_id", "province_code", "price", "tax_code"]
+      },
+      "Plan": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "number_of_recipes": {
+            "type": "integer"
+          },
+          "number_of_portions": {
+            "type": "integer"
+          }
+        },
+        "required": ["id", "number_of_recipes", "number_of_portions"]
+      },
+      "PlanFrequency": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "frequency_type": {
+            "type": "string",
+            "enum": ["DAY", "MONTH", "YEAR"]
+          },
+          "frequency_value": {
+            "type": "integer"
+          }
+        },
+        "required": ["id", "frequency_type", "frequency_value"]
+      },
+      "SetupIntent": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string"
+          },
+          "client_secret": {
+            "type": "string"
+          }
+        },
+        "required": ["customer_id", "client_secret"]
+      },
+      "Agreement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "terms_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ip_address": {
+            "type": "string",
+            "format": "ipv4"
+          },
+          "terms": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "BaseSubscriptionInput": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "card_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "address_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "terms_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subscription_type": {
+            "type": "string",
+            "enum": ["MEMBERSHIP", "SCHEDULED"]
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "send_notification": {
+            "type": "boolean"
+          },
+          "delivery_day": {
+            "type": "string",
+            "enum": ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
+          },
+          "plan_frequency_id": {
+            "type": "integer"
+          },
+          "initial_cycle_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "old_plan_id": {
+            "type": "integer",
+            "example": 20
+          },
+          "invite_uuid": {
+            "description": "A GF2.0 Invite UUID, used if user signing up with freebox invitation",
+            "type": "string",
+            "format": "uuid"
+          },
+          "referrer_id": {
+            "description": "A GF2.0 GiveGet referrer id. 'g' - refers to an email invite. 'l' - refers to a link invite.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "card_id",
+          "terms_id",
+          "subscription_type",
+          "product_id",
+          "send_notification"
+        ]
+      },
+      "SubscriptionInput": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseSubscriptionInput"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "ip_address": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "ipv4"
+                  },
+                  {
+                    "type": "string",
+                    "format": "ipv6"
+                  }
+                ]
+              },
+              "coupon_code": {
+                "type": "string",
+                "example": "MEALKIT45"
+              }
+            },
+            "required": ["ip_address"]
+          }
+        ]
+      },
+      "Subscription": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "card_id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "address_id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "agreement_id": {
+            "type": "integer"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "CANCELLATION",
+              "TRIAL",
+              "UNPAID",
+              "CANCELLED",
+              "PAUSED",
+              "SUSPENDED"
+            ]
+          },
+          "subscription_type": {
+            "type": "string",
+            "enum": ["SCHEDULED", "MEMBERSHIP"]
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "frequency_type": {
+            "type": "string",
+            "enum": ["DAY", "MONTH", "YEAR"]
+          },
+          "frequency_value": {
+            "type": "integer"
+          },
+          "delivery_day": {
+            "type": "string",
+            "enum": ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
+          },
+          "next_cycle": {
+            "type": "string",
+            "format": "date"
+          },
+          "send_notification": {
+            "type": "boolean"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date"
+          },
+          "product": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Membership"
+              },
+              {
+                "$ref": "#/components/schemas/Plan"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "card_id",
+          "address_id",
+          "state",
+          "subscription_type",
+          "product_id",
+          "frequency_type",
+          "frequency_value",
+          "next_cycle",
+          "send_notification",
+          "started_at"
+        ]
+      },
+      "CancellationSelections":{
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "subscription_id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "reason_id": {
+            "type": "number"
+          },
+          "edit_value": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "agent_id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "category": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      },
+      "UncancelSubscription": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "card_id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "address_id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "agreement_id": {
+            "type": "integer"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "CANCELLATION",
+              "TRIAL",
+              "UNPAID",
+              "CANCELLED",
+              "PAUSED",
+              "SUSPENDED"
+            ]
+          },
+          "subscription_type": {
+            "type": "string",
+            "enum": ["SCHEDULED", "MEMBERSHIP"]
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuidv4"
+          },
+          "frequency_type": {
+            "type": "string",
+            "enum": ["DAY", "MONTH", "YEAR"]
+          },
+          "frequency_value": {
+            "type": "integer"
+          },
+          "delivery_day": {
+            "type": "string",
+            "enum": ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
+          },
+          "is_afterhours": {
+            "type": "boolean"
+          },
+          "next_cycle": {
+            "type": "string",
+            "format": "date"
+          },
+          "send_notification": {
+            "type": "boolean"
+          },
+          "coupon_code": {
+            "type": "string",
+            "example": "MEALKIT45"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "card_id",
+          "address_id",
+          "state",
+          "subscription_type",
+          "product_id",
+          "frequency_type",
+          "frequency_value",
+          "next_cycle",
+          "send_notification",
+          "started_at"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "error description"
+          },
+          "meta": {
+            "description": "Structured representation of the error",
+            "example": {
+              "errors": [["The fsa field is required."]]
+            }
+          },
+          "status_code": {
+            "type": "number"
+          }
+        }
+      },
+      "CancellationReasonValue": {
+        "description": "",
+        "type": "object",
+        "title": "CancellationReasonProperties",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1
+          },
+          "entry_type": {
+            "type": "string",
+            "minLength": 1,
+            "enum": ["STATIC", "EDITABLE"],
+            "default": "STATIC"
+          },
+          "priority": {
+            "type": "integer",
+            "default": null,
+            "nullable": true
+          },
+          "is_user_visible": {
+            "type": "boolean"
+          }
+        },
+        "required": ["code", "is_user_visible"]
+      },
+      "CancellationReasonEntity": {
+        "title": "CancellationReasonEntityProperties",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "CancellationSelectionValue": {
+        "title": "CancellationSelectionValue",
+        "type": "object",
+        "x-examples": {},
+        "properties": {
+          "reason_id": {
+            "type": "integer",
+            "example": 2
+          },
+          "edit_value": {
+            "type": "string",
+            "nullable": true,
+            "example": "User stopped eating food"
+          },
+          "category": {
+            "type": "string",
+            "nullable": true,
+            "example": "Contentful category"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "enum": ["ADA", "CLIENT", "SYSTEM", "ZENDESK"],
+            "example": "CLIENT"
+          }
+        },
+        "description": "A user's selection for value"
+      },
+      "CancellationSelectionEntity": {
+        "title": "CancellationSelectionEntity",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "subscription_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "PreferenceEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subscription_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "tag": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "user_id", "subscription_id", "tag"]
+      },
+      "LastCancelledSubscription": {
+        "type": "object",
+        "description": "The last cancelled subscription by the user",
+        "properties": {
+          "create_payload": {
+            "description": "Payload to pass to createSubscription. old_plan_id will be added by BFF.",
+            "$ref": "#/components/schemas/BaseSubscriptionInput"
+          },
+          "product": {
+            "description": "Details on the membership or meal plan",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Membership"
+              },
+              {
+                "$ref": "#/components/schemas/Plan"
+              }
+            ]
+          }
+        }
+      },
+      "UpdateSubscriptionPlanRequestBody": {
+        "type": "object",
+        "properties": {
+          "plan_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "old_plan_id": {
+            "type": "number",
+            "description": "GF2 legacy plan ID"
+          }
+        },
+        "required": ["plan_id", "old_plan_id"]
+      }
+    },
+    "responses": {
+      "InvalidInput": {
+        "description": "Invalid form input or required fields missing",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

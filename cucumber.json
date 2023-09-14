@@ -1,0 +1,16 @@
+{
+  "default": {
+    "parallel": 2,
+    "format": [
+      "@cucumber/pretty-formatter",
+      "html:dist/cucumber-report.html"
+    ],
+    "requireModule": [
+      "ts-node/register"
+    ],
+    "require": [
+      "features/**/*.ts"
+    ],
+    "publish": true
+  }
+}

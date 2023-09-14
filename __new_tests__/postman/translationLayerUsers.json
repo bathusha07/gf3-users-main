@@ -1,0 +1,738 @@
+{
+	"info": {
+		"_postman_id": "10a639f1-cfe5-4ad5-bcb4-5fc7e9fce5ab",
+		"name": "3.0 User service/Translation Layer: User, Address",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Attempt to create user without firebase_id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400', () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"pm.test('Response error string specifies invalid type', () => {",
+							"    pm.expect(pm.response.json().error).to.include('firebase_id');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"test@test.com\",\n    \"phone\": \"5145550000\",\n    \"first_name\": \"Johnny\",\n    \"last_name\": \"Bravo\",\n    \"fsa\": \"H2T\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt to create user without email",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400', () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"pm.test('Response error string specifies invalid type', () => {",
+							"    pm.expect(pm.response.json().error).to.include('email');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firebase_id\": \"1234567890qwertyuiopasdfghjk\",\n    \"phone\": \"5145550000\",\n    \"first_name\": \"Johnny\",\n    \"last_name\": \"Bravo\",\n    \"fsa\": \"H2T\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt to create user without fsa",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400', () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"pm.test('Response error string specifies invalid type', () => {",
+							"    pm.expect(pm.response.json().error).to.include('fsa');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"test@test.com\",\n    \"firebase_id\": \"1234567890qwertyuiopasdfghjk\",\n    \"phone\": \"5145550000\",\n    \"first_name\": \"Johnny\",\n    \"last_name\": \"Bravo\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('properties of a user are present', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.id).to.be.string;",
+							"    pm.expect(json.email).to.be.string;",
+							"    pm.expect(json.firebase_id).to.be.string;",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_USER_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let create_random_string = require('uuid').v4().replace(/-/g, '').substring(12);",
+							"pm.collectionVariables.set('CREATE_FIREBASE_ID', create_random_string);",
+							"pm.collectionVariables.set('CREATE_EMAIL', `${create_random_string}@test.com`);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firebase_id\": \"{{CREATE_FIREBASE_ID}}\",\n    \"email\": \"{{CREATE_EMAIL}}\",\n    \"phone\": \"5145550001\",\n    \"first_name\": \"Barney\",\n    \"last_name\": \"Rubble\",\n    \"fsa\": \"H2T\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify user created on makegoodfood2 with correct input & default fields",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('properties of the Goodfood2 user match those of the 3.0 user', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.gf3_id).to.eql(pm.collectionVariables.get(\"CREATED_USER_ID\"));",
+							"    pm.expect(json.email).to.eql(pm.collectionVariables.get(\"CREATE_EMAIL\"));",
+							"});",
+							"",
+							"const WEBSITE_ID_GOODFOOD = 1;",
+							"pm.test('verify default properties of the Goodfood2 user', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.website_id).to.eql(WEBSITE_ID_GOODFOOD);",
+							"    pm.expect(json.role).to.eql(\"client\");",
+							"    pm.expect(json.mode).to.eql(\"off-subscription\");",
+							"    pm.expect(json.province_id).to.eql(1)",
+							"    pm.expect(json.active_memberships[0].code).to.eql(\"flex\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer 11179465681114c3b3dd7831083debde9d741a92f379bb0b01e2263598005f72",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{MAKEGOODFOOD2_URL}}/api/translation/user/{{CREATED_USER_ID}}",
+					"host": [
+						"{{MAKEGOODFOOD2_URL}}"
+					],
+					"path": [
+						"api",
+						"translation",
+						"user",
+						"{{CREATED_USER_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify cart created on makegoodfood2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('curated and standard cart ID arrays are included', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.carts).to.be.an('array');",
+							"});",
+							"",
+							"pm.test('there is at least one standard cart returned', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.standard_cart_ids).to.have.lengthOf.above(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer 11179465681114c3b3dd7831083debde9d741a92f379bb0b01e2263598005f72",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{MAKEGOODFOOD2_URL}}/api/translation/user/{{CREATED_USER_ID}}/cart_ids",
+					"host": [
+						"{{MAKEGOODFOOD2_URL}}"
+					],
+					"path": [
+						"api",
+						"translation",
+						"user",
+						"{{CREATED_USER_ID}}",
+						"cart_ids"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('user properties updated', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.firebase_id).to.eql(pm.collectionVariables.get(\"UPDATE_FIREBASE_ID\"));",
+							"    pm.expect(json.email).to.eql(pm.collectionVariables.get(\"UPDATE_EMAIL\"));",
+							"    pm.expect(json.phone).to.eql(pm.collectionVariables.get(\"UPDATE_PHONE\"));",
+							"    pm.expect(json.first_name).to.eql(pm.collectionVariables.get(\"UPDATE_FIRST_NAME\"));",
+							"    pm.expect(json.last_name).to.eql(pm.collectionVariables.get(\"UPDATE_LAST_NAME\"));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let update_random_string = require('uuid').v4().replace(/-/g, '').substring(12);",
+							"pm.collectionVariables.set('UPDATE_FIREBASE_ID', update_random_string);",
+							"pm.collectionVariables.set('UPDATE_EMAIL', `${update_random_string}@test.com`);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firebase_id\": \"{{UPDATE_FIREBASE_ID}}\",\n    \"email\": \"{{UPDATE_EMAIL}}\",\n    \"phone\": \"{{UPDATE_PHONE}}\",\n    \"first_name\": \"{{UPDATE_FIRST_NAME}}\",\n    \"last_name\": \"{{UPDATE_LAST_NAME}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update user without email and firebase_id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('user properties updated', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.firebase_id).to.eql(pm.collectionVariables.get(\"UPDATE_FIREBASE_ID\"));",
+							"    pm.expect(json.email).to.eql(pm.collectionVariables.get(\"UPDATE_EMAIL\"));",
+							"    pm.expect(json.phone).to.eql(pm.collectionVariables.get(\"UPDATE_PHONE\"));",
+							"    pm.expect(json.first_name).to.eql(pm.collectionVariables.get(\"UPDATE_FIRST_NAME\") + '1');",
+							"    pm.expect(json.last_name).to.eql(pm.collectionVariables.get(\"UPDATE_LAST_NAME\") + '2');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"phone\": \"{{UPDATE_PHONE}}\",\n    \"first_name\": \"{{UPDATE_FIRST_NAME}}1\",\n    \"last_name\": \"{{UPDATE_LAST_NAME}}2\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify user updated on makegoodfood2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('makegoodfood2 user properties updated', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.email).to.eql(pm.collectionVariables.get(\"UPDATE_EMAIL\"));",
+							"    pm.expect(json.phone).to.eql(pm.collectionVariables.get(\"UPDATE_PHONE\"));",
+							"    pm.expect(json.first_name).to.eql(pm.collectionVariables.get(\"UPDATE_FIRST_NAME\"));",
+							"    pm.expect(json.last_name).to.eql(pm.collectionVariables.get(\"UPDATE_LAST_NAME\"));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer 11179465681114c3b3dd7831083debde9d741a92f379bb0b01e2263598005f72",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{MAKEGOODFOOD2_URL}}/api/translation/user/{{CREATED_USER_ID}}",
+					"host": [
+						"{{MAKEGOODFOOD2_URL}}"
+					],
+					"path": [
+						"api",
+						"translation",
+						"user",
+						"{{CREATED_USER_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create address",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('properties of an address are present', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.id).to.be.string;",
+							"    pm.expect(json.user_id).to.be.string;",
+							"    pm.expect(json.address_line_1).to.be.string;",
+							"    pm.expect(json.postal_code).to.be.string;",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_ADDRESS_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": \"{{CREATED_USER_ID}}\",\n    \"is_default\": true,\n    \"address_line_1\": \"1234 Somewhere Road\",\n    \"city\": \"Townsville\",\n    \"province_code\": \"AB\",\n    \"country_code\": \"CA\",\n    \"postal_code\": \"H2T 2M2\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/address/",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"address",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify user updated on makegoodfood2 after 3.0 address creation",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('makegoodfood2 user address properties updated', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.adress).to.eql(\"1234 Somewhere Road\");",
+							"    pm.expect(json.city).to.eql(\"Townsville\");",
+							"    pm.expect(json.zipe_code).to.eql(\"H2T2M2\");",
+							"    pm.expect(json.province_id).to.be.a('number');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer 11179465681114c3b3dd7831083debde9d741a92f379bb0b01e2263598005f72",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{MAKEGOODFOOD2_URL}}/api/translation/user/{{CREATED_USER_ID}}",
+					"host": [
+						"{{MAKEGOODFOOD2_URL}}"
+					],
+					"path": [
+						"api",
+						"translation",
+						"user",
+						"{{CREATED_USER_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update address",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('address properties updated', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.address_line_1).to.eql(pm.collectionVariables.get(\"UPDATE_ADDRESS_LINE_ONE\"));",
+							"    pm.expect(json.city).to.eql(pm.collectionVariables.get(\"UPDATE_CITY\"));",
+							"    pm.expect(json.province_code).to.eql(pm.collectionVariables.get(\"UPDATE_PROVINCE_CODE\"));",
+							"    pm.expect(json.postal_code).to.eql(pm.collectionVariables.get(\"UPDATE_POSTAL_CODE\"));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": \"{{CREATED_USER_ID}}\",\n    \"is_default\": true,\n    \"address_line_1\": \"{{UPDATE_ADDRESS_LINE_ONE}}\",\n    \"city\": \"{{UPDATE_CITY}}\",\n    \"province_code\": \"{{UPDATE_PROVINCE_CODE}}\",\n    \"country_code\": \"CA\",\n    \"postal_code\": \"{{UPDATE_POSTAL_CODE}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/address/{{CREATED_ADDRESS_ID}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"address",
+						"{{CREATED_ADDRESS_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify user updated on makegoodfood2 after 3.0 address update",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('makegoodfood2 user address properties updated', () => {",
+							"    let updatePostalCode = pm.collectionVariables.get(\"UPDATE_POSTAL_CODE\");",
+							"    let gf2FormattedPostalCode = updatePostalCode.substring(0,3) + updatePostalCode.substring(4); // postal space removed",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.adress).to.eql(pm.collectionVariables.get(\"UPDATE_ADDRESS_LINE_ONE\"));",
+							"    pm.expect(json.city).to.eql(pm.collectionVariables.get(\"UPDATE_CITY\"));",
+							"    pm.expect(json.zipe_code).to.eql(gf2FormattedPostalCode);",
+							"    pm.expect(json.province_id).to.be.a('number');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer 11179465681114c3b3dd7831083debde9d741a92f379bb0b01e2263598005f72",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{MAKEGOODFOOD2_URL}}/api/translation/user/{{CREATED_USER_ID}}",
+					"host": [
+						"{{MAKEGOODFOOD2_URL}}"
+					],
+					"path": [
+						"api",
+						"translation",
+						"user",
+						"{{CREATED_USER_ID}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "CREATE_FIREBASE_ID",
+			"value": ""
+		},
+		{
+			"key": "CREATE_EMAIL",
+			"value": ""
+		},
+		{
+			"key": "CREATED_USER_ID",
+			"value": ""
+		},
+		{
+			"key": "UPDATE_FIREBASE_ID",
+			"value": ""
+		},
+		{
+			"key": "UPDATE_EMAIL",
+			"value": ""
+		},
+		{
+			"key": "UPDATE_FIRST_NAME",
+			"value": "Bam"
+		},
+		{
+			"key": "UPDATE_LAST_NAME",
+			"value": "Bam"
+		},
+		{
+			"key": "UPDATE_PHONE",
+			"value": "5147771111"
+		},
+		{
+			"key": "CREATED_ADDRESS_ID",
+			"value": ""
+		},
+		{
+			"key": "UPDATE_ADDRESS_LINE_ONE",
+			"value": "10 Blabla Lane"
+		},
+		{
+			"key": "UPDATE_CITY",
+			"value": "Pallet Town"
+		},
+		{
+			"key": "UPDATE_PROVINCE_CODE",
+			"value": "QC"
+		},
+		{
+			"key": "UPDATE_POSTAL_CODE",
+			"value": "H2X 2S1"
+		}
+	]
+}

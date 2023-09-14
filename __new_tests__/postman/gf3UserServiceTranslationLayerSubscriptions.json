@@ -1,0 +1,809 @@
+{
+	"info": {
+		"_postman_id": "306f822c-55f7-4ef7-873d-c082a71e8c4e",
+		"name": "3.0 User service/Translation Layer: Subscriptions",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('CREATED_USER_ID', pm.response.json().id)"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let random_string = require('uuid').v4().replace(/-/g, '').substring(12);",
+							"pm.collectionVariables.set('FIREBASE_ID', random_string);",
+							"pm.collectionVariables.set('EMAIL', `${random_string}@test.com`);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"{{EMAIL}}\",\n  \"phone\": \"5141234567\",\n  \"first_name\": \"Scooby\",\n  \"last_name\": \"Doo\",\n  \"firebase_id\": \"{{FIREBASE_ID}}\",\n  \"fsa\": \"H4T\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create address",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('CREATED_ADDRESS_ID', pm.response.json().id)"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"address_line_1\": \"4600 Hickmore\",\n  \"address_line_2\": \"\",\n  \"company\": \"Goodfood\",\n  \"city\": \"St Laurent\",\n  \"province_code\": \"QC\",\n  \"country_code\": \"CA\",\n  \"postal_code\": \"H4T 1K2\",\n  \"special_instructions\": \"None\",\n  \"is_default\": true\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/address",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"address"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create setup intent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('CREATED_STRIPE_CUSTOMER_ID', pm.response.json().customer_id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"requester_id\": \"e1I4xYb9T0U35Od9nfNmaCjgRoS2\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/setup_intent",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"setup_intent"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create card",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('CREATED_CARD_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"create_method\": \"INTENT\",\n  \"stripe_payment_method_id\": \"pm_card_ca\",\n  \"stripe_customer_id\": \"{{CREATED_STRIPE_CUSTOMER_ID}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/card",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"card"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Plans",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Number of plans is above 0 and the id of the first exists', () => {",
+							"    pm.expect(pm.response.json().length).to.be.above(0);",
+							"    pm.expect(pm.response.json()[0].id).to.exist;",
+							"});",
+							"",
+							"pm.collectionVariables.set('VALID_PLAN_ID', pm.response.json()[0].id);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/plan",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"plan"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create mealkit subscription",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('properties of a subscription are present', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.user_id).to.be.string;",
+							"    pm.expect(json.card_id).to.be.string;",
+							"    pm.expect(json.address_id).to.be.string;",
+							"    pm.expect(json.frequency_type).to.be.string;",
+							"    pm.expect(json.frequency_value).to.be.a('number');",
+							"    pm.expect(json.delivery_day).to.be.string;",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_MEALKIT_SUBSCRIPTION_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"card_id\": \"{{CREATED_CARD_ID}}\",\n  \"address_id\": \"{{CREATED_ADDRESS_ID}}\",\n  \"terms_id\": \"d3345060-01e2-44df-9ac9-15896ecfc180\",\n  \"subscription_type\": \"SCHEDULED\",\n  \"product_id\": \"{{VALID_PLAN_ID}}\",\n  \"send_notification\": true,\n  \"delivery_day\": \"MONDAY\",\n  \"plan_frequency_id\": 1,\n  \"ip_address\": \"198.51.100.42\",\n  \"old_plan_id\": {{OLD_PLAN_ID}}\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/subscription",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"subscription"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify user set to subscription mode",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('makegoodfood2 user properties updated', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.mode).to.eql(\"subscription\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{API_TOKEN}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{MAKEGOODFOOD2_URL}}/api/translation/user/{{CREATED_USER_ID}}",
+					"host": [
+						"{{MAKEGOODFOOD2_URL}}"
+					],
+					"path": [
+						"api",
+						"translation",
+						"user",
+						"{{CREATED_USER_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create mealkit subscription with coupon",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('properties of a subscription are present', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.user_id).to.be.string;",
+							"    pm.expect(json.card_id).to.be.string;",
+							"    pm.expect(json.address_id).to.be.string;",
+							"    pm.expect(json.frequency_type).to.be.string;",
+							"    pm.expect(json.frequency_value).to.be.a('number');",
+							"    pm.expect(json.delivery_day).to.be.string;",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_MEALKIT_SUBSCRIPTION_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"card_id\": \"{{CREATED_CARD_ID}}\",\n  \"address_id\": \"{{CREATED_ADDRESS_ID}}\",\n  \"terms_id\": \"d3345060-01e2-44df-9ac9-15896ecfc180\",\n  \"subscription_type\": \"SCHEDULED\",\n  \"product_id\": \"192114f3-c23f-41c0-b99f-71ab0c0bd5ca\",\n  \"send_notification\": true,\n  \"delivery_day\": \"MONDAY\",\n  \"plan_frequency_id\": 1,\n  \"ip_address\": \"198.51.100.42\",\n  \"coupon_code\": \"{{COUPON_CODE}}\",\n  \"old_plan_id\": {{OLD_PLAN_ID}}\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/subscription",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"subscription"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify user granted coupon specified in previous request",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('makegoodfood2 user properties updated', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.coupon_id).to.eql(parseInt(pm.collectionVariables.get('COUPON_ID')));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{API_TOKEN}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{MAKEGOODFOOD2_URL}}/api/translation/user/{{CREATED_USER_ID}}",
+					"host": [
+						"{{MAKEGOODFOOD2_URL}}"
+					],
+					"path": [
+						"api",
+						"translation",
+						"user",
+						"{{CREATED_USER_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update mealkit subscription delivery day",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Subscription delivery_day is TUESDAY', () => {",
+							"    pm.expect(pm.response.json().delivery_day).to.eql('TUESDAY');",
+							"});",
+							"",
+							"/*",
+							"To verify results on GF2, check the quotes and quote_order_bridges tables to see that the quotes.delivery_date and ",
+							"quote_order_bridges.delivery_day were each updated.",
+							"*/"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"delivery_day\": \"TUESDAY\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/subscription/{{CREATED_MEALKIT_SUBSCRIPTION_ID}}/weekday",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"subscription",
+						"{{CREATED_MEALKIT_SUBSCRIPTION_ID}}",
+						"weekday"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Cancel mealkit subscription",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"reason_id\": 2,\n  \"edit_value\": \"what's an edit value?\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/subscription/{{CREATED_MEALKIT_SUBSCRIPTION_ID}}/cancellation",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"subscription",
+						"{{CREATED_MEALKIT_SUBSCRIPTION_ID}}",
+						"cancellation"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify user set to off-subscription",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('makegoodfood2 user properties updated', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.mode).to.eql(\"off-subscription\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{API_TOKEN}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{MAKEGOODFOOD2_URL}}/api/translation/user/{{CREATED_USER_ID}}",
+					"host": [
+						"{{MAKEGOODFOOD2_URL}}"
+					],
+					"path": [
+						"api",
+						"translation",
+						"user",
+						"{{CREATED_USER_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Memberships",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Number of memberships is above 0 and the id of the first exists', () => {",
+							"    pm.expect(pm.response.json().length).to.be.above(0);",
+							"    pm.expect(pm.response.json()[0].id).to.exist;",
+							"});",
+							"",
+							"pm.collectionVariables.set('VALID_MEMBERSHIP_ID', pm.response.json()[0].id);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/membership",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"membership"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create wow (membership) subscription",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('properties of a subscription are present', () => {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.user_id).to.be.string;",
+							"    pm.expect(json.card_id).to.be.string;",
+							"    pm.expect(json.address_id).to.be.string;",
+							"    pm.expect(json.frequency_type).to.be.string;",
+							"    pm.expect(json.frequency_value).to.be.a('number');",
+							"    pm.expect(json.delivery_day).to.be.string;",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_WOW_SUBSCRIPTION_ID', pm.response.json().id);",
+							"",
+							"/*",
+							"To verify that this worked, check that a record exists for the user in user_stripe_susbscription with ends_at = NULL,",
+							"and that a user_wow_flex record exists for the user",
+							"*/"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"card_id\": \"{{CREATED_CARD_ID}}\",\n  \"address_id\": \"{{CREATED_ADDRESS_ID}}\",\n  \"terms_id\": \"d3345060-01e2-44df-9ac9-15896ecfc180\",\n  \"subscription_type\": \"MEMBERSHIP\",\n  \"product_id\": \"{{VALID_MEMBERSHIP_ID}}\",\n  \"send_notification\": true,\n  \"ip_address\": \"198.51.100.42\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/subscription",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"subscription"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Extend WOW subscription trial",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('subscription next_cycle updated', () => {",
+							"    pm.expect(pm.response.json().next_cycle).to.eql(pm.collectionVariables.get('FUTURE_TRIAL_END_DATE'));",
+							"});",
+							"",
+							"/*",
+							"To verify that this worked in TranslationLayer, check that the trial_ends_at for the user's user_stripe_subscription record",
+							"was extended to the new trial end date submitted",
+							"*/"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"trial_end\": \"{{FUTURE_TRIAL_END_DATE}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/subscription/{{CREATED_WOW_SUBSCRIPTION_ID}}/trial",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"subscription",
+						"{{CREATED_WOW_SUBSCRIPTION_ID}}",
+						"trial"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Cancel membership subscription",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"/*",
+							"To verify that this worked, check that a record exists for the user in user_stripe_susbscription with ends_at != NULL,",
+							"and that the user's user_wow_flex record was removed (i.e. they have no entries in this table)",
+							"*/"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"reason_id\": 1,\n  \"edit_value\": \"I am editing this value\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/subscription/{{CREATED_WOW_SUBSCRIPTION_ID}}/cancellation",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"subscription",
+						"{{CREATED_WOW_SUBSCRIPTION_ID}}",
+						"cancellation"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "CREATED_USER_ID",
+			"value": ""
+		},
+		{
+			"key": "CREATED_ADDRESS_ID",
+			"value": ""
+		},
+		{
+			"key": "CREATED_STRIPE_CUSTOMER_ID",
+			"value": ""
+		},
+		{
+			"key": "CREATED_CARD_ID",
+			"value": ""
+		},
+		{
+			"key": "OLD_PLAN_ID",
+			"value": "20"
+		},
+		{
+			"key": "VALID_PLAN_ID",
+			"value": ""
+		},
+		{
+			"key": "CREATED_MEALKIT_SUBSCRIPTION_ID",
+			"value": ""
+		},
+		{
+			"key": "VALID_MEMBERSHIP_ID",
+			"value": ""
+		},
+		{
+			"key": "CREATED_WOW_SUBSCRIPTION_ID",
+			"value": ""
+		},
+		{
+			"key": "FUTURE_TRIAL_END_DATE",
+			"value": "2022-01-12T00:00:00.000Z"
+		},
+		{
+			"key": "COUPON_CODE",
+			"value": "QC45"
+		},
+		{
+			"key": "COUPON_ID",
+			"value": "213016"
+		},
+		{
+			"key": "FIREBASE_ID",
+			"value": ""
+		},
+		{
+			"key": "EMAIL",
+			"value": ""
+		}
+	]
+}

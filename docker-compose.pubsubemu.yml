@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  web:
+    environment:
+      PUBSUB_EMULATOR_HOST: http://pubsub:8085
+      GOOGLE_CLOUD_PROJECT: project123
+    depends_on:
+      - pubsub
+  pubsub:
+    command: ["gcloud", "beta", "emulators", "pubsub", "start", "--host-port", "0.0.0.0:8085"]
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:emulators
+    ports:
+      - "8085:8085"
+  pubsub-listeners:
+    image: node:14-alpine
+    volumes:
+      - .:/src
+    command: ["node", "src/scripts/pubsub-emulator-listeners.js"]
+    environment:
+      NODE_ENV: development
+      PUBSUB_EMULATOR_HOST: http://pubsub:8085
+      GOOGLE_CLOUD_PROJECT: project123
+    depends_on:
+      - pubsub

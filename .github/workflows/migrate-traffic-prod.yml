@@ -1,0 +1,37 @@
+name: Migrate Traffic (Production)
+
+on:
+  workflow_dispatch:
+    inputs:
+      bg_dispatch:
+        description: 'Name of the Cloud Run tag to migrate traffic to. (blue or green)'     
+        required: true
+        default: 'blue'
+      traffic_amount:
+        description: 'The percentage based amount of traffic to migrate to the specified tag. (1-100)'     
+        required: true
+        default: '1'
+
+
+env:
+  PROJECT_ID: ${{ secrets.PROD_GCP_PROJECT }}
+  SERVICE: gf3-users
+  REGION: us-east1
+
+jobs:
+  migrate-traffic:
+    if: github.ref == 'refs/heads/main'
+    name: Deploy to Cloud Run (Production)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up gcloud Cloud SDK environment
+        uses: google-github-actions/setup-gcloud@v0.2.1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          service_account_key: ${{ secrets.PROD_GCP_SA_KEY }}
+          export_default_credentials: true  # Set to true to authenticate the Cloud Run action
+
+      - name: Migrate traffic to ${{ github.event.inputs.bg_dispatch }}
+        run: gcloud run services update-traffic ${{ env.SERVICE }} --to-tags ${{ github.event.inputs.bg_dispatch }}=${{ github.event.inputs.traffic_amount }} --region=${{ env.REGION }}

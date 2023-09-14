@@ -1,0 +1,6 @@
+{
+  "onboarding": "onboarding",
+  "subscriptionRenewal": "subscription-renewal",
+  "subscriptionCreated": "user-subscription-created",
+  "curateSubscriptionQueue": "curate-subscription-queue"
+}

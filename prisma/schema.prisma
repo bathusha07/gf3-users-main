@@ -1,0 +1,323 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "darwin", "debian-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Address {
+  id                   String         @id @unique(map: "address.id_unique") @db.VarChar(36)
+  user_id              String         @db.VarChar(36)
+  address_line_1       String         @db.VarChar(255)
+  address_line_2       String?        @db.VarChar(255)
+  company              String?        @db.VarChar(255)
+  city                 String         @db.VarChar(255)
+  province_code        String         @db.VarChar(2)
+  country_code         String         @default("CA") @db.VarChar(2)
+  postal_code          String         @db.VarChar(7)
+  fsa                  String         @db.VarChar(3)
+  building_type        String?        @db.VarChar(255)
+  special_instructions String?        @db.Text
+  is_default           Boolean        @default(false)
+  created_at           DateTime       @default(now()) @db.Timestamp(0)
+  updated_at           DateTime       @updatedAt @db.Timestamp(0)
+  deleted_at           DateTime?      @db.Timestamp(0)
+  province             Province       @relation(fields: [province_code], references: [code], onDelete: Cascade, map: "address_ibfk_1")
+  user                 User           @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "address_ibfk_2")
+  Subscription         Subscription[]
+
+  @@index([province_code], map: "province_code")
+  @@index([user_id], map: "user_id")
+  @@map("address")
+}
+
+model Agreement {
+  id           Int            @id @default(autoincrement()) @db.UnsignedInt
+  terms_id     String         @db.VarChar(36)
+  user_id      String         @db.VarChar(36)
+  ip_address   String
+  created_at   DateTime       @default(now()) @db.Timestamp(0)
+  updated_at   DateTime       @updatedAt @db.Timestamp(0)
+  deleted_at   DateTime?      @db.Timestamp(0)
+  user         User           @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "agreement_ibfk_2")
+  terms        Terms          @relation(fields: [terms_id], references: [id], onDelete: Cascade, map: "agreement_ibfk_3")
+  Subscription Subscription[]
+
+  @@index([terms_id], map: "terms_id")
+  @@index([user_id], map: "user_id")
+  @@map("agreement")
+}
+
+model Terms {
+  id              String            @id @unique(map: "terms.id_unique") @db.VarChar(36)
+  name            String            @db.VarChar(255)
+  created_at      DateTime          @default(now()) @db.Timestamp(0)
+  updated_at      DateTime          @updatedAt @db.Timestamp(0)
+  deleted_at      DateTime?         @db.Timestamp(0)
+  Agreement       Agreement[]
+  MembershipTerms MembershipTerms[]
+
+  @@map("terms")
+}
+
+model Province {
+  code            String            @id @db.VarChar(2)
+  name            String            @db.VarChar(255)
+  created_at      DateTime          @default(now()) @db.Timestamp(0)
+  updated_at      DateTime          @updatedAt @db.Timestamp(0)
+  deleted_at      DateTime?         @db.Timestamp(0)
+  Address         Address[]
+  MembershipPrice MembershipPrice[]
+
+  @@map("province")
+}
+
+model User {
+  id             String          @id @unique(map: "user.id_unique") @db.VarChar(36)
+  firebase_id    String          @unique(map: "user.firebase_id_unique") @db.VarChar(28)
+  email          String          @unique(map: "user.email_unique") @db.VarChar(255)
+  phone          String?         @db.VarChar(50)
+  first_name     String?         @db.VarChar(255)
+  last_name      String?         @db.VarChar(255)
+  language       String          @default("en") @db.VarChar(5)
+  created_at     DateTime        @default(now()) @db.Timestamp(0)
+  updated_at     DateTime        @updatedAt @db.Timestamp(0)
+  deleted_at     DateTime?       @db.Timestamp(0)
+  addresses      Address[]
+  Agreement      Agreement[]
+  preferences    Preference[]
+  stripeCustomer StripeCustomer?
+  subscriptions  Subscription[]
+
+  @@map("user")
+}
+
+model StripeCustomer {
+  user_id            String    @id @unique(map: "stripe_customer.user_id_unique") @db.VarChar(36)
+  created_at         DateTime  @default(now()) @db.Timestamp(0)
+  updated_at         DateTime  @updatedAt @db.Timestamp(0)
+  deleted_at         DateTime? @db.Timestamp(0)
+  stripe_customer_id String    @unique(map: "stripe_customer.stripe_customer_id_unique") @db.VarChar(18)
+  cards              Card[]
+  User               User      @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "stripe_customer_ibfk_1")
+
+  @@map("stripe_customer")
+}
+
+model Card {
+  id                       String         @id @unique(map: "card.id_unique") @db.VarChar(36)
+  stripe_customer_id       String         @db.VarChar(18)
+  stripe_payment_method_id String?        @unique(map: "card.stripe_payment_method_id_unique") @db.VarChar(36)
+  created_at               DateTime       @default(now()) @db.Timestamp(0)
+  updated_at               DateTime       @updatedAt @db.Timestamp(0)
+  deleted_at               DateTime?      @db.Timestamp(0)
+  stripe_card_id           String?        @unique(map: "card.stripe_card_id_unique") @db.VarChar(36)
+  stripe_card_token        String?        @unique(map: "card.stripe_card_token_unique") @db.VarChar(36)
+  stripe_card_fingerprint  String?        @db.VarChar(16)
+  is_default               Boolean        @default(false)
+  stripeCustomer           StripeCustomer @relation(fields: [stripe_customer_id], references: [stripe_customer_id], onDelete: Cascade, map: "card_ibfk_1")
+  subscriptions            Subscription[]
+
+  @@index([stripe_card_fingerprint], map: "card.stripe_card_fingerprint_index")
+  @@index([stripe_customer_id], map: "stripe_customer_id")
+  @@map("card")
+}
+
+model Membership {
+  id              String            @id @unique(map: "membership.id_unique") @db.VarChar(36)
+  code            String            @db.VarChar(255)
+  name            String            @db.VarChar(255)
+  trial_type      DateUnit
+  trial_value     Int
+  frequency_type  DateUnit
+  frequency_value Int
+  created_at      DateTime          @default(now()) @db.Timestamp(0)
+  updated_at      DateTime          @updatedAt @db.Timestamp(0)
+  deleted_at      DateTime?         @db.Timestamp(0)
+  prices          MembershipPrice[]
+  MembershipTerms MembershipTerms[]
+
+  @@map("membership")
+}
+
+model MembershipPrice {
+  id            Int        @id @default(autoincrement()) @db.UnsignedInt
+  membership_id String     @db.VarChar(36)
+  province_code String     @db.VarChar(2)
+  price         Float      @db.Float
+  tax_code      String     @db.VarChar(255)
+  created_at    DateTime   @default(now()) @db.Timestamp(0)
+  updated_at    DateTime   @updatedAt @db.Timestamp(0)
+  deleted_at    DateTime?  @db.Timestamp(0)
+  membership    Membership @relation(fields: [membership_id], references: [id], onDelete: Cascade, map: "membership_price_ibfk_1")
+  province      Province   @relation(fields: [province_code], references: [code], onDelete: Cascade, map: "membership_price_ibfk_2")
+
+  @@unique([membership_id, province_code], name: "membership_price_province_membership_unique", map: "membership_price_province_membership_unique")
+  @@index([province_code], map: "province_code")
+  @@map("membership_price")
+}
+
+model MembershipTerms {
+  membership_id String     @db.VarChar(36)
+  terms_id      String     @db.VarChar(36)
+  membership    Membership @relation(fields: [membership_id], references: [id], onDelete: Cascade, map: "membership_terms_ibfk_1")
+  terms         Terms      @relation(fields: [terms_id], references: [id], onDelete: Cascade, map: "membership_terms_ibfk_2")
+
+  @@id([membership_id, terms_id])
+  @@index([terms_id], map: "terms_id")
+  @@map("membership_terms")
+}
+
+model Plan {
+  id                 String    @id @unique(map: "plan.id_unique") @db.VarChar(36)
+  number_of_recipes  Int
+  number_of_portions Int
+  created_at         DateTime  @default(now()) @db.Timestamp(0)
+  updated_at         DateTime  @updatedAt @db.Timestamp(0)
+  deleted_at         DateTime? @db.Timestamp(0)
+
+  @@map("plan")
+}
+
+model PlanFrequency {
+  id              Int       @id @default(autoincrement()) @db.UnsignedInt
+  frequency_type  DateUnit
+  frequency_value Int
+  created_at      DateTime  @default(now()) @db.Timestamp(0)
+  updated_at      DateTime  @updatedAt @db.Timestamp(0)
+  deleted_at      DateTime? @db.Timestamp(0)
+
+  @@map("plan_frequency")
+}
+
+model Subscription {
+  id                    String                  @id @unique(map: "subscription.id_unique") @db.VarChar(36)
+  user_id               String                  @db.VarChar(36)
+  card_id               String?                 @db.VarChar(36)
+  address_id            String?                 @db.VarChar(36)
+  state                 SubscriptionState
+  subscription_type     SubscriptionType
+  product_id            String                  @db.VarChar(36)
+  frequency_type        DateUnit
+  frequency_value       Int
+  next_cycle            DateTime?
+  send_notification     Boolean                 @default(false)
+  coupon_code           String?
+  created_at            DateTime                @default(now()) @db.Timestamp(0)
+  updated_at            DateTime                @updatedAt @db.Timestamp(0)
+  deleted_at            DateTime?               @db.Timestamp(0)
+  agreement_id          Int                     @db.UnsignedInt
+  delivery_day          DayOfWeek?
+  started_at            DateTime
+  is_afterhours         Boolean?                @default(false)
+  CancellationSelection CancellationSelection[]
+  preferences           Preference[]
+  user                  User                    @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "subscription_ibfk_1")
+  card                  Card?                   @relation(fields: [card_id], references: [id], onDelete: Cascade, map: "subscription_ibfk_2")
+  agreement             Agreement               @relation(fields: [agreement_id], references: [id], onDelete: Cascade, map: "subscription_ibfk_4")
+  address               Address?                @relation(fields: [address_id], references: [id], onDelete: Cascade, map: "subscription_ibfk_5")
+
+  @@index([address_id], map: "address_id")
+  @@index([agreement_id], map: "agreement_id")
+  @@index([card_id], map: "card_id")
+  @@index([subscription_type], map: "subscription.subscription_type_index")
+  @@index([updated_at], map: "subscription.updated_at_index")
+  @@index([user_id], map: "user_id")
+  @@map("subscription")
+}
+
+model CancellationReason {
+  id                    Int                     @id @default(autoincrement()) @db.UnsignedInt
+  code                  String                  @unique(map: "cancellation_reason.code_unique") @db.VarChar(255)
+  priority              Int?                    @db.UnsignedInt
+  entry_type            CancellationReasonType  @default(STATIC)
+  is_user_visible       Boolean
+  created_at            DateTime                @default(now()) @db.Timestamp(0)
+  updated_at            DateTime                @updatedAt @db.Timestamp(0)
+  deleted_at            DateTime?               @db.Timestamp(0)
+  CancellationSelection CancellationSelection[]
+
+  @@map("cancellation_reason")
+}
+
+model CancellationSelection {
+  id              Int                @id @default(autoincrement()) @db.UnsignedInt
+  subscription_id String             @db.VarChar(36)
+  reason_id       Int                @db.UnsignedInt
+  edit_value      String?            @db.Text
+  created_at      DateTime           @default(now()) @db.Timestamp(0)
+  agent_id        String?            @db.VarChar(36)
+  category        String?            @db.VarChar(255)
+  source          SourceType?
+  option          CancellationReason @relation(fields: [reason_id], references: [id], onDelete: Cascade, map: "cancellation_selection_ibfk_1")
+  subscription    Subscription       @relation(fields: [subscription_id], references: [id], onDelete: Cascade, map: "cancellation_selection_ibfk_2")
+
+  @@index([reason_id], map: "reason_id")
+  @@index([subscription_id], map: "subscription_id")
+  @@index([agent_id], map: "agent_id")
+  @@index([category], map: "category")
+  @@index([source], map: "source")
+  @@map("cancellation_selection")
+}
+
+model Preference {
+  id              Int           @id @default(autoincrement()) @db.UnsignedInt
+  created_at      DateTime      @default(now()) @db.Timestamp(0)
+  user_id         String        @db.VarChar(36)
+  subscription_id String?       @db.VarChar(36)
+  tag             String        @db.VarChar(36)
+  subscription    Subscription? @relation(fields: [subscription_id], references: [id], map: "preference_ibfk_1")
+  user            User          @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "preference_ibfk_2")
+
+  @@index([subscription_id], map: "subscription_id")
+  @@index([user_id], map: "user_id")
+  @@map("preference")
+}
+
+enum SourceType {
+  ADA
+  CLIENT
+  SYSTEM
+  ZENDESK
+}
+
+enum DateUnit {
+  DAY
+  MONTH
+  YEAR
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum SubscriptionType {
+  MEMBERSHIP
+  SCHEDULED
+  PRODUCT
+}
+
+enum SubscriptionState {
+  ACTIVE
+  CANCELLATION
+  TRIAL
+  TRIAL_ENDED
+  UNPAID
+  CANCELLED
+  PAUSED
+  SUSPENDED
+}
+
+enum CancellationReasonType {
+  STATIC
+  EDITABLE
+}

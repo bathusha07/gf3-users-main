@@ -1,0 +1,71 @@
+name: CI
+
+on: push
+
+env:
+  PKG_AUTH_TOKEN: ${{ secrets.PKG_AUTH_TOKEN }}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 14
+    - name: Run Lint
+      run: |-
+        npm ci
+        npm run db:generate
+        npm run build --if-present
+        npm run lint
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 14
+    - name: Run Test
+      run: |-
+        npm ci
+        npm run db:generate
+        npm run build --if-present
+        npm run test:coverage
+  componentTest:
+    name: Component test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 14
+      - name: Setup test env
+        run: |-
+          docker-compose -f docker-compose.ci.yml up -d
+          
+          docker build --build-arg PKG_AUTH_TOKEN=${{ secrets.PKG_AUTH_TOKEN }} -t gf3-users .
+          ./.github/workflows/scripts/mockSetup.sh
+          
+          docker run --rm \
+            -e PKG_AUTH_TOKEN=$PKG_AUTH_TOKEN \
+            -e DATABASE_URL=mysql://root:example@mysql:3306/users \
+            --network gf3-users_default \
+            gf3-users \
+            sh -c "npm run db:deploy && \
+            npm run db:seed"
+          
+          docker run -d --rm \
+            --name gf3-users \
+            -e DATABASE_URL=mysql://root:example@mysql:3306/users \
+            --network gf3-users_default \
+            -p 8080:8080 \
+            gf3-users
+      - name: Test
+        run: |-
+          docker logs -f gf3-users &
+          npm ci
+          mkdir dist
+          npm run test:component

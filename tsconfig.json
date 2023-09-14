@@ -1,0 +1,10 @@
+{
+  "extends": "@tsconfig/node14/tsconfig.json",
+  "include": ["src/**/*.ts", "prisma/**/*.ts", "__new_tests__/**/*.ts", "features/**/*.ts"],
+  "exclude": ["node_modules", "src/factories", "src/infrastructure/services/firebase.ts"],
+  "compilerOptions": {
+    "outDir": "dist",
+    "allowJs": false,
+    "resolveJsonModule": true
+  }
+}

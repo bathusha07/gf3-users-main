@@ -1,0 +1,1 @@
+export const ANONYMIZED_STRIPE_CUSTOMER_PREFIX = 'anon_';

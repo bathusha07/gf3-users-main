@@ -1,0 +1,24 @@
+{
+	"id": "97528d02-a744-4d60-b192-f849d361d5e1",
+	"name": "GF3-Users Local",
+	"values": [
+		{
+			"key": "BASE_URL",
+			"value": "http://localhost:8080",
+			"enabled": true
+		},
+		{
+			"key": "MAKEGOODFOOD2_URL",
+			"value": "https://local.goodfoodtest.com",
+			"enabled": true
+		},
+		{
+			"key": "API_TOKEN",
+			"value": "11179465681114c3b3dd7831083debde9d741a92f379bb0b01e2263598005f72",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2021-08-12T13:51:38.843Z",
+	"_postman_exported_using": "Postman/8.8.0"
+}

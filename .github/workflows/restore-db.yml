@@ -1,0 +1,40 @@
+name: Restore DB
+
+on:
+  workflow_dispatch:
+    # Inputs the workflow accepts.
+    inputs:
+      backupId:
+        description: 'Backup id from prod'
+        default: ''
+        required: true
+      targetDb:
+        description: 'Target db instance name'
+        default: 'sql-mgf-q-users-5302'
+        required: true
+      targetProjectId:
+        description: 'Target GCP project id'
+        default: 'prj-mgf-q-new-three-5302'
+        required: true
+
+jobs:
+  # This workflow contains a single job called "greet"
+  restoreDb:
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Runs a single command using the runners shell
+    
+    - name: Restore DB
+      run: |-
+        curl --location --request POST "https://sqladmin.googleapis.com/v1/projects/${{ github.event.inputs.targetProjectId }}/instances/${{ github.event.inputs.targetDb }}/restoreBackup" \
+          -H "Authorization: Bearer "$(gcloud auth print-access-token) \
+          -H "Content-Type: application/json; charset=utf-8" \
+          --data-raw '{
+              "restoreBackupContext": {
+                  "backupRunId": ${{ github.event.inputs.backupId }},
+                  "project": "prj-mgf-p-prod-ee8f",
+                  "instanceId": "sql-mgf-p-production-ee8f"
+              }
+          }'    

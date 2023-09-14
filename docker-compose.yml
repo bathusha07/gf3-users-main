@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  web:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - .:/src
+    command: sh -c "
+      npm install -g nodemon &&
+      npm install &&
+      npm run start:dev"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+  mysql:
+    image: mysql:8
+    container_name: mysql-users
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=gf3
+      - MYSQL_PASSWORD=secret
+      - MYSQL_DATABASE=users
+    volumes:
+      - users_volume:/var/lib/mysql
+    ports:
+      - 33065:3306
+volumes:
+  users_volume: {}

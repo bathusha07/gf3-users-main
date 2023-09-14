@@ -1,0 +1,793 @@
+{
+	"info": {
+		"_postman_id": "27b6ecdb-6c47-4d70-b154-47a62138767b",
+		"name": "3.0 User Service: Cards",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_USER_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let random_string = require('uuid').v4().replace(/-/g, '').substring(12);",
+							"pm.collectionVariables.set('FIREBASE_ID', random_string);",
+							"pm.collectionVariables.set('EMAIL', `${random_string}@test.com`);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"firebase_id\": \"{{FIREBASE_ID}}\",\n  \"email\": \"{{EMAIL}}\",\n  \"fsa\": \"H4T\",\n  \"language\": \"fr\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Atempt to create a card without a create method",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400', () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"stripe_card_token\": \"{{STRIPE_CARD_TOKEN}}\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/card",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"card"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Atempt to create a card with an already-used token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 500', () => {",
+							"    pm.response.to.have.status(500);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"create_method\": \"TOKEN\",\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"stripe_card_token\": \"tok_1JPC65HvjO3p47C8lcQyNYaj\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/card",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"card"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Stripe token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const testYear = new Date().getFullYear() + 3;",
+							"pm.collectionVariables.set('STRIPE_TEST_YEAR', testYear);",
+							"",
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.collectionVariables.set('STRIPE_CARD_TOKEN', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const testYear = new Date().getFullYear() + 3;",
+							"pm.collectionVariables.set('TEST_CARD_YEAR', testYear);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "{{STRIPE_TEST_KEY}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "card[number]",
+							"value": "4242424242424242",
+							"type": "text"
+						},
+						{
+							"key": "card[exp_month]",
+							"value": "1",
+							"type": "text"
+						},
+						{
+							"key": "card[exp_year]",
+							"value": "{{TEST_CARD_YEAR}}",
+							"type": "text"
+						},
+						{
+							"key": "card[cvc]",
+							"value": "314",
+							"type": "text"
+						}
+					],
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.stripe.com/v1/tokens",
+					"protocol": "https",
+					"host": [
+						"api",
+						"stripe",
+						"com"
+					],
+					"path": [
+						"v1",
+						"tokens"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create card from token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.collectionVariables.set('TOKEN_CREATED_CARD_ID', pm.response.json().id);",
+							"pm.collectionVariables.set('STRIPE_CARD_ID', pm.response.json().stripe_card_id);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"create_method\": \"TOKEN\",\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"stripe_card_token\": \"{{STRIPE_CARD_TOKEN}}\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/card",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"card"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create card from token with same input as previous call",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('Idempotent call should return the same card entity', () => {",
+							"    pm.expect(pm.response.json().id).equal(pm.collectionVariables.get(\"TOKEN_CREATED_CARD_ID\"));",
+							"    pm.expect(pm.response.json().stripe_card_id).equal(pm.collectionVariables.get(\"STRIPE_CARD_ID\"));",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"create_method\": \"TOKEN\",\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"stripe_card_token\": \"{{STRIPE_CARD_TOKEN}}\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/card",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"card"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get card created from token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/card/{{TOKEN_CREATED_CARD_ID}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"card",
+						"{{TOKEN_CREATED_CARD_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create new Stripe token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.collectionVariables.set('STRIPE_CARD_TOKEN_NEW', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const testYear = new Date().getFullYear() + 3;",
+							"pm.collectionVariables.set('STRIPE_TEST_YEAR', testYear);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "{{STRIPE_TEST_KEY}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "card[number]",
+							"value": "4242424242424242",
+							"type": "text"
+						},
+						{
+							"key": "card[exp_month]",
+							"value": "1",
+							"type": "text"
+						},
+						{
+							"key": "card[exp_year]",
+							"value": "{{TEST_CARD_YEAR}}",
+							"type": "text"
+						},
+						{
+							"key": "card[cvc]",
+							"value": "314",
+							"type": "text"
+						}
+					],
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.stripe.com/v1/tokens",
+					"protocol": "https",
+					"host": [
+						"api",
+						"stripe",
+						"com"
+					],
+					"path": [
+						"v1",
+						"tokens"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update card with new stripe token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Stripe card should not be the same as before update', () => {",
+							"    pm.expect(pm.response.json().stripe_card_id).not.equal(pm.collectionVariables.get(\"STRIPE_CARD_ID\"));",
+							"});",
+							"",
+							"pm.collectionVariables.set('STRIPE_CARD_ID_NEW', pm.response.json().stripe_card_id);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"stripe_card_token\": \"{{STRIPE_CARD_TOKEN_NEW}}\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/card/{{TOKEN_CREATED_CARD_ID}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"card",
+						"{{TOKEN_CREATED_CARD_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update card with same stripe token as previous call",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Stripe card should not be the same as before update', () => {",
+							"    pm.expect(pm.response.json().stripe_card_id).equal(pm.collectionVariables.get(\"STRIPE_CARD_ID_NEW\"));",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"stripe_card_token\": \"{{STRIPE_CARD_TOKEN_NEW}}\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/card/{{TOKEN_CREATED_CARD_ID}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"card",
+						"{{TOKEN_CREATED_CARD_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create setup intent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_STRIPE_CUSTOMER_ID', pm.response.json().customer_id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"requester_id\": \"e1I4xYb9T0U35Od9nfNmaCjgRoS2\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/setup_intent",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"setup_intent"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create card from intent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.collectionVariables.set('INTENT_CREATED_CARD_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"create_method\": \"INTENT\",\n  \"stripe_payment_method_id\": \"pm_card_ca\",\n  \"stripe_customer_id\": \"{{CREATED_STRIPE_CUSTOMER_ID}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/card",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"card"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get card created from intent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/card/{{INTENT_CREATED_CARD_ID}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"card",
+						"{{INTENT_CREATED_CARD_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get user cards",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Number of user cards should be 2', () => {",
+							"    pm.expect(pm.response.json().length).to.equal(2);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/card",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"card"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete card with token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 204', () => {",
+							"    pm.response.to.have.status(204);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/card/stripe_card_id/{{STRIPE_CARD_ID_NEW}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"card",
+						"stripe_card_id",
+						"{{STRIPE_CARD_ID_NEW}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "FIREBASE_ID",
+			"value": ""
+		},
+		{
+			"key": "EMAIL",
+			"value": ""
+		},
+		{
+			"key": "STRIPE_CARD_TOKEN",
+			"value": ""
+		},
+		{
+			"key": "STRIPE_CARD_TOKEN_NEW",
+			"value": ""
+		},
+		{
+			"key": "CREATED_USER_ID",
+			"value": ""
+		},
+		{
+			"key": "TOKEN_CREATED_CARD_ID",
+			"value": ""
+		},
+		{
+			"key": "STRIPE_CARD_ID",
+			"value": ""
+		},
+		{
+			"key": "CREATED_STRIPE_CUSTOMER_ID",
+			"value": ""
+		},
+		{
+			"key": "INTENT_CREATED_CARD_ID",
+			"value": ""
+		},
+		{
+			"key": "STRIPE_CARD_ID_NEW",
+			"value": ""
+		},
+		{
+			"key": "STRIPE_TEST_YEAR",
+			"value": ""
+		},
+		{
+			"key": "TEST_CARD_YEAR",
+			"value": ""
+		}
+	]
+}

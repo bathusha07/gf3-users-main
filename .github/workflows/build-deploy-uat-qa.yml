@@ -1,0 +1,100 @@
+name: Cloud Run (UAT QA)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  PROJECT_ID: ${{ secrets.QA_GCP_PROJECT }}
+  SERVICE: gf3-users
+  REGION: us-east1
+  PKG_AUTH_TOKEN: ${{ secrets.PKG_AUTH_TOKEN }}
+
+jobs:
+  deployment:
+    name: Build container, migrate database and deploy (QA)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Set up gcloud Cloud SDK environment
+        uses: google-github-actions/setup-gcloud@v0.2.1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          service_account_key: ${{ secrets.QA_GCP_SA_KEY }}
+          export_default_credentials: true # Set to true to authenticate the Cloud Run action
+
+      - name: Configure Docker credential helper with gcloud
+        run: gcloud auth configure-docker
+
+      - name: Start Cloud SQL Auth Proxy
+        run: |
+          wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy
+          chmod +x cloud_sql_proxy
+          sudo mkdir /cloudsql
+          sudo chmod 777 /cloudsql
+          ./cloud_sql_proxy -dir=/cloudsql -instances=${{ secrets.QA_DB_INSTANCE_CONNECTION_NAME }} &
+
+      - name: Cache Node Modules
+        id: cache-node-modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Node modules
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: |-
+          npm ci
+
+      - name: Write firebase config file
+        run: |
+          echo "$FIREBASE_CONFIG" > firebase_config.json
+        shell: bash
+        env:
+          FIREBASE_CONFIG: ${{ secrets.UAT_QA_FIREBASE_CONFIG }}
+
+      - name: Build and push container
+        run: |-
+          docker build --build-arg PKG_AUTH_TOKEN=${{ secrets.PKG_AUTH_TOKEN }} -t gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:latest -t gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }} .
+          docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:latest
+          docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}
+
+      - name: Run production migration
+        run: |-
+          npm run db:generate
+          npm run db:deploy
+          npm run db:seed
+        env:
+          DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v0.5.0
+        with:
+          service: ${{ env.SERVICE }}
+          image: gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}
+          region: ${{ env.REGION }}
+          env_vars: DATABASE_URL=${{ secrets.QA_DATABASE_URL }},
+            STRIPE_SECRET=${{ secrets.TEST_STRIPE_SECRET }},
+            TRANSLATION_LAYER_AUTH_TOKEN=${{ secrets.QA_TL_TOKEN }},
+            TRANSLATION_LAYER_SERVICE_URL=${{ secrets.QA_TL_URL }},
+            TRANSLATION_LAYER_HOST=${{ secrets.QA_TL_HOST }},
+            NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }},
+            NEW_RELIC_APP_NAME=${{ env.SERVICE }}_qa
+          flags: --allow-unauthenticated --vpc-connector=vpc-connector-qa
+
+      - name: Outputs
+        run: echo ${{ steps.deploy.outputs.url }}

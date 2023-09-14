@@ -1,0 +1,977 @@
+{
+	"info": {
+		"_postman_id": "98a8895a-ea07-4328-874e-a95ea961c67d",
+		"name": "3.0 Users Service: Preferences",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_USER_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let random_string = require('uuid').v4().replace(/-/g, '').substring(12);",
+							"pm.collectionVariables.set('FIREBASE_ID', random_string);",
+							"pm.collectionVariables.set('EMAIL', `${random_string}@test.com`);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"firebase_id\": \"{{FIREBASE_ID}}\",\n  \"email\": \"{{EMAIL}}\",\n  \"fsa\": \"H4T\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create address",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_ADDRESS_ID', pm.response.json().id)"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"address_line_1\": \"4600 Hickmore\",\n  \"address_line_2\": \"\",\n  \"company\": \"Goodfood\",\n  \"city\": \"St Laurent\",\n  \"province_code\": \"QC\",\n  \"country_code\": \"CA\",\n  \"postal_code\": \"H4T 1K2\",\n  \"special_instructions\": \"None\",\n  \"is_default\": true\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/address",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"address"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create setup intent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_STRIPE_CUSTOMER_ID', pm.response.json().customer_id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"requester_id\": \"e1I4xYb9T0U35Od9nfNmaCjgRoS2\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/setup_intent",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"setup_intent"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create card",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_CARD_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"create_method\": \"INTENT\",\n  \"stripe_payment_method_id\": \"pm_card_ca\",\n  \"stripe_customer_id\": \"{{CREATED_STRIPE_CUSTOMER_ID}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/card",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"card"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Plans",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Number of plans is above 0 and the id of the first exists', () => {",
+							"    pm.expect(pm.response.json().length).to.be.above(0);",
+							"    pm.expect(pm.response.json()[0].id).to.exist;",
+							"});",
+							"",
+							"pm.collectionVariables.set('VALID_PLAN_ID', pm.response.json()[0].id)"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/plan",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"plan"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create subscription",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.collectionVariables.set('CREATED_ORDER_ID', pm.response.json().id)",
+							"",
+							"pm.collectionVariables.set('CREATED_SUBSCRIPTION_ID', pm.response.json().id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"user_id\": \"{{CREATED_USER_ID}}\",\n  \"card_id\": \"{{CREATED_CARD_ID}}\",\n  \"address_id\": \"{{CREATED_ADDRESS_ID}}\",\n  \"terms_id\": \"d3345060-01e2-44df-9ac9-15896ecfc180\",\n  \"subscription_type\": \"SCHEDULED\",\n  \"product_id\": \"{{VALID_PLAN_ID}}\",\n  \"send_notification\": true,\n  \"delivery_day\": \"MONDAY\",\n  \"plan_frequency_id\": 1,\n  \"ip_address\": \"198.51.100.42\",\n  \"old_plan_id\": {{OLD_PLAN_ID}}\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/subscription",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"subscription"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt to create user preferences with missing preferences",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400', () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/preferences",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"preferences"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt to create user preferences with bad user id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400', () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    \"poutry\",\n    \"pre-cut\"\n]\n"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/not-gonna-work-dude/preferences",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"not-gonna-work-dude",
+						"preferences"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt to create user preferences with non-existent user id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 404', () => {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    \"poutry\",\n    \"pre-cut\"\n]\n"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/f5e848c5-2221-4e64-9dd3-f5f46495ac56/preferences",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"f5e848c5-2221-4e64-9dd3-f5f46495ac56",
+						"preferences"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create user preferences",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('Number of preferences is 2', () => {",
+							"    pm.expect(pm.response.json().length).to.eql(2);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    \"pork\",\n    \"pre-cut\"\n]\n"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/preferences",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"preferences"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt to create subscription-level preferences with bad subscription id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400', () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    \"poultry\",\n    \"pre-cut\"\n]\n"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/preferences?subscription_id=not-gonna-work-dude",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"preferences"
+					],
+					"query": [
+						{
+							"key": "subscription_id",
+							"value": "not-gonna-work-dude"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt to create subscription-level preferences with non-existent subscription id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 404', () => {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    \"poultry\",\n    \"pre-cut\"\n]\n"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/preferences?subscription_id=0efc17e0-0013-4512-ab81-716a96b17f46",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"preferences"
+					],
+					"query": [
+						{
+							"key": "subscription_id",
+							"value": "0efc17e0-0013-4512-ab81-716a96b17f46"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create subscription-level preferences",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 201', () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('Number of preferences is 2', () => {",
+							"    pm.expect(pm.response.json().length).to.eql(2);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    \"poultry\",\n    \"pre-cut\"\n]\n"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/preferences?subscription_id={{CREATED_SUBSCRIPTION_ID}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"preferences"
+					],
+					"query": [
+						{
+							"key": "subscription_id",
+							"value": "{{CREATED_SUBSCRIPTION_ID}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt to get user preferences with bad user id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400', () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/user/not-gonna-work-dude/preferences",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"not-gonna-work-dude",
+						"preferences"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt to get user preferences with non-existent user id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 404', () => {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/user/f5e848c5-2221-4e64-9dd3-f5f46495ac56/preferences",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"f5e848c5-2221-4e64-9dd3-f5f46495ac56",
+						"preferences"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get user preferences",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/preferences",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"preferences"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt to get subscription-level preferences with bad subscription id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 400', () => {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/preferences?subscription_id=not-gonna-work-dude",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"preferences"
+					],
+					"query": [
+						{
+							"key": "subscription_id",
+							"value": "not-gonna-work-dude"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Attempt to get subscription-level preferences with non-existent subscription id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 404', () => {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/preferences?subscription_id=0efc17e0-0013-4512-ab81-716a96b17f46",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"preferences"
+					],
+					"query": [
+						{
+							"key": "subscription_id",
+							"value": "0efc17e0-0013-4512-ab81-716a96b17f46"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get subscription-level preferences",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/preferences?subscription_id={{CREATED_SUBSCRIPTION_ID}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"preferences"
+					],
+					"query": [
+						{
+							"key": "subscription_id",
+							"value": "{{CREATED_SUBSCRIPTION_ID}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Set preferences should only insert new preferences",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Number of preferences is 3', () => {",
+							"    pm.expect(pm.response.json().length).to.eql(3);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    \"pork\",\n    \"poultry\",\n    \"pre-cut\"\n]\n"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/preferences?subscription_id={{CREATED_SUBSCRIPTION_ID}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"preferences"
+					],
+					"query": [
+						{
+							"key": "subscription_id",
+							"value": "{{CREATED_SUBSCRIPTION_ID}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Set preferences should remove preferences that are no longer specified",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Number of preferences is 2', () => {",
+							"    pm.expect(pm.response.json().length).to.eql(2);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    \"pork\",\n    \"lamb\"\n]\n"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/user/{{CREATED_USER_ID}}/preferences?subscription_id={{CREATED_SUBSCRIPTION_ID}}",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"user",
+						"{{CREATED_USER_ID}}",
+						"preferences"
+					],
+					"query": [
+						{
+							"key": "subscription_id",
+							"value": "{{CREATED_SUBSCRIPTION_ID}}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "FIREBASE_ID",
+			"value": ""
+		},
+		{
+			"key": "EMAIL",
+			"value": ""
+		},
+		{
+			"key": "CREATED_USER_ID",
+			"value": ""
+		},
+		{
+			"key": "CREATED_ADDRESS_ID",
+			"value": ""
+		},
+		{
+			"key": "CREATED_STRIPE_CUSTOMER_ID",
+			"value": ""
+		},
+		{
+			"key": "CREATED_CARD_ID",
+			"value": ""
+		},
+		{
+			"key": "CREATED_SUBSCRIPTION_ID",
+			"value": ""
+		},
+		{
+			"key": "CREATED_ORDER_ID",
+			"value": ""
+		},
+		{
+			"key": "VALID_PLAN_ID",
+			"value": ""
+		},
+		{
+			"key": "OLD_PLAN_ID",
+			"value": "20"
+		}
+	]
+}

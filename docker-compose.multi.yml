@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  web:
+    ports:
+      - "3001:8080"
+    networks:
+      - gf3
+  mysql:
+    networks:
+      - gf3
+    ports:
+      - "33060:3306"
+
+networks:
+  gf3:
+    name: gf3
+    driver: bridge
